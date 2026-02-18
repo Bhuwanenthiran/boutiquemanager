@@ -1,0 +1,417 @@
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
+import { useProductionStore } from '../../store/productionStore';
+import { Card } from '../../components/common';
+import { FormInput, FormButton } from '../../components/forms';
+
+const STAGES = [
+    { key: 'production1', label: 'Production 1', subtitle: 'Base Stitching', icon: 'construct-outline', color: COLORS.slate },
+    { key: 'production2', label: 'Production 2', subtitle: 'Aari / Embroidery', icon: 'flower-outline', color: COLORS.accent },
+    { key: 'production3', label: 'Production 3', subtitle: 'Add-ons & Detailing', icon: 'sparkles-outline', color: COLORS.primary },
+];
+
+const WorkProductionScreen = ({ navigation }) => {
+    const productionOrders = useProductionStore((s) => s.productionOrders);
+    const productionStages = useProductionStore((s) => s.productionStages);
+    const updateStage = useProductionStore((s) => s.updateStage);
+    const [selectedOrder, setSelectedOrder] = useState(productionOrders[0]?.id || null);
+    const [expandedStage, setExpandedStage] = useState(null);
+
+    const currentStages = productionStages[selectedOrder] || {};
+
+    const getStageData = (key) => currentStages[key] || { status: 'pending', startedAt: null, completedAt: null, notes: '' };
+
+    const handleStageAction = (stageKey, action) => {
+        const now = new Date().toISOString().split('T')[0];
+        if (action === 'start') {
+            updateStage(selectedOrder, stageKey, { status: 'in_progress', startedAt: now });
+        } else if (action === 'complete') {
+            updateStage(selectedOrder, stageKey, { status: 'completed', completedAt: now });
+        }
+    };
+
+    const handleNotesUpdate = (stageKey, notes) => {
+        updateStage(selectedOrder, stageKey, { notes });
+    };
+
+    const getCompletionPercent = () => {
+        let completed = 0;
+        STAGES.forEach(s => {
+            if (getStageData(s.key).status === 'completed') completed++;
+        });
+        return Math.round((completed / STAGES.length) * 100);
+    };
+
+    return (
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Work Production</Text>
+                <View style={{ width: 40 }} />
+            </View>
+
+            {/* Order Selector */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.orderTabs}>
+                {productionOrders.map(order => (
+                    <TouchableOpacity
+                        key={order.id}
+                        style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
+                        onPress={() => setSelectedOrder(order.id)}
+                    >
+                        <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
+                        <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
+                            {order.customerName}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+
+            {/* Overall Progress */}
+            <View style={styles.overallProgress}>
+                <View style={styles.progressInfo}>
+                    <Text style={styles.progressTitle}>Overall Progress</Text>
+                    <Text style={styles.progressPercent}>{getCompletionPercent()}%</Text>
+                </View>
+                <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${getCompletionPercent()}%` }]} />
+                </View>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stagesContent}>
+                {/* Stepper */}
+                {STAGES.map((stage, idx) => {
+                    const data = getStageData(stage.key);
+                    const isExpanded = expandedStage === stage.key;
+                    const isCompleted = data.status === 'completed';
+                    const isInProgress = data.status === 'in_progress';
+
+                    return (
+                        <View key={stage.key}>
+                            {/* Connector Line */}
+                            {idx > 0 && (
+                                <View style={styles.connectorWrap}>
+                                    <View style={[
+                                        styles.connectorLine,
+                                        getStageData(STAGES[idx - 1].key).status === 'completed' && styles.connectorCompleted,
+                                    ]} />
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => setExpandedStage(isExpanded ? null : stage.key)}
+                            >
+                                <Card elevated style={[
+                                    styles.stageCard,
+                                    isCompleted && styles.stageCardCompleted,
+                                    isInProgress && styles.stageCardActive,
+                                ]}>
+                                    <View style={styles.stageHeader}>
+                                        <View style={[styles.stageIconWrap, { backgroundColor: stage.color + '18' }]}>
+                                            {isCompleted ? (
+                                                <Ionicons name="checkmark-circle" size={22} color={COLORS.success} />
+                                            ) : (
+                                                <Ionicons name={stage.icon} size={22} color={stage.color} />
+                                            )}
+                                        </View>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={styles.stageLabel}>{stage.label}</Text>
+                                            <Text style={styles.stageSubtitle}>{stage.subtitle}</Text>
+                                        </View>
+                                        <View style={styles.stageStatusWrap}>
+                                            {isCompleted && (
+                                                <View style={[styles.statusPill, { backgroundColor: COLORS.successLight }]}>
+                                                    <Text style={[styles.statusPillText, { color: COLORS.success }]}>Done</Text>
+                                                </View>
+                                            )}
+                                            {isInProgress && (
+                                                <View style={[styles.statusPill, { backgroundColor: COLORS.warningLight }]}>
+                                                    <Text style={[styles.statusPillText, { color: COLORS.warning }]}>Active</Text>
+                                                </View>
+                                            )}
+                                            {!isCompleted && !isInProgress && (
+                                                <View style={[styles.statusPill, { backgroundColor: COLORS.borderLight }]}>
+                                                    <Text style={[styles.statusPillText, { color: COLORS.textMuted }]}>Pending</Text>
+                                                </View>
+                                            )}
+                                            <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textMuted} style={{ marginLeft: 8 }} />
+                                        </View>
+                                    </View>
+
+                                    {/* Expanded Content */}
+                                    {isExpanded && (
+                                        <View style={styles.stageExpanded}>
+                                            {/* Dates */}
+                                            <View style={styles.datesRow}>
+                                                {data.startedAt && (
+                                                    <View style={styles.dateItem}>
+                                                        <Ionicons name="play-circle-outline" size={14} color={COLORS.success} />
+                                                        <Text style={styles.dateText}>Started: {data.startedAt}</Text>
+                                                    </View>
+                                                )}
+                                                {data.completedAt && (
+                                                    <View style={styles.dateItem}>
+                                                        <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.success} />
+                                                        <Text style={styles.dateText}>Completed: {data.completedAt}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+
+                                            {/* Notes */}
+                                            <FormInput
+                                                label="Notes"
+                                                value={data.notes}
+                                                onChangeText={(v) => handleNotesUpdate(stage.key, v)}
+                                                placeholder="Add production notes..."
+                                                multiline
+                                                icon="document-text-outline"
+                                            />
+
+                                            {/* Image Upload Placeholder */}
+                                            <TouchableOpacity style={styles.uploadArea}>
+                                                <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
+                                                <Text style={styles.uploadText}>Upload Work Progress</Text>
+                                                <Text style={styles.uploadHint}>Tap to add photos</Text>
+                                            </TouchableOpacity>
+
+                                            {/* Action Buttons */}
+                                            <View style={styles.stageActions}>
+                                                {!isCompleted && !isInProgress && (
+                                                    <FormButton
+                                                        title="Start Production"
+                                                        icon="play-outline"
+                                                        onPress={() => handleStageAction(stage.key, 'start')}
+                                                    />
+                                                )}
+                                                {isInProgress && (
+                                                    <FormButton
+                                                        title="Mark Complete"
+                                                        icon="checkmark-outline"
+                                                        onPress={() => handleStageAction(stage.key, 'complete')}
+                                                    />
+                                                )}
+                                            </View>
+                                        </View>
+                                    )}
+                                </Card>
+                            </TouchableOpacity>
+                        </View>
+                    );
+                })}
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.bg,
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: SIZES.lg,
+        paddingTop: SIZES.xxxl + SIZES.sm,
+        paddingBottom: SIZES.md,
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.bgCard,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...SHADOWS.small,
+    },
+    headerTitle: {
+        fontSize: SIZES.subtitle,
+        color: COLORS.textPrimary,
+        ...FONTS.semiBold,
+    },
+    orderTabs: {
+        paddingHorizontal: SIZES.lg,
+        paddingBottom: SIZES.md,
+    },
+    orderTab: {
+        backgroundColor: COLORS.bgCard,
+        borderRadius: SIZES.radiusMd,
+        paddingHorizontal: SIZES.md,
+        paddingVertical: SIZES.sm,
+        marginRight: SIZES.sm,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        minWidth: 90,
+    },
+    orderTabActive: {
+        backgroundColor: COLORS.primaryMuted,
+        borderColor: COLORS.primary,
+    },
+    orderTabId: {
+        fontSize: SIZES.caption,
+        color: COLORS.textMuted,
+        ...FONTS.medium,
+    },
+    orderTabIdActive: {
+        color: COLORS.primary,
+    },
+    orderTabName: {
+        fontSize: SIZES.small,
+        color: COLORS.textSecondary,
+        ...FONTS.regular,
+        marginTop: 2,
+    },
+    orderTabNameActive: {
+        color: COLORS.primary,
+        ...FONTS.medium,
+    },
+    overallProgress: {
+        marginHorizontal: SIZES.lg,
+        marginBottom: SIZES.md,
+    },
+    progressInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SIZES.sm,
+    },
+    progressTitle: {
+        fontSize: SIZES.body,
+        color: COLORS.textSecondary,
+        ...FONTS.medium,
+    },
+    progressPercent: {
+        fontSize: SIZES.body,
+        color: COLORS.primary,
+        ...FONTS.bold,
+    },
+    progressBar: {
+        height: 6,
+        backgroundColor: COLORS.borderLight,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: 6,
+        backgroundColor: COLORS.primary,
+        borderRadius: 3,
+    },
+    stagesContent: {
+        paddingHorizontal: SIZES.lg,
+        paddingBottom: SIZES.xxxl,
+    },
+    connectorWrap: {
+        alignItems: 'center',
+        height: 24,
+    },
+    connectorLine: {
+        width: 2,
+        flex: 1,
+        backgroundColor: COLORS.border,
+    },
+    connectorCompleted: {
+        backgroundColor: COLORS.success,
+    },
+    stageCard: {
+        borderLeftWidth: 3,
+        borderLeftColor: COLORS.border,
+    },
+    stageCardCompleted: {
+        borderLeftColor: COLORS.success,
+    },
+    stageCardActive: {
+        borderLeftColor: COLORS.primary,
+    },
+    stageHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    stageIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: SIZES.radiusMd,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: SIZES.md,
+    },
+    stageLabel: {
+        fontSize: SIZES.bodyLg,
+        color: COLORS.textPrimary,
+        ...FONTS.semiBold,
+    },
+    stageSubtitle: {
+        fontSize: SIZES.small,
+        color: COLORS.textMuted,
+        ...FONTS.regular,
+        marginTop: 1,
+    },
+    stageStatusWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    statusPill: {
+        paddingHorizontal: SIZES.sm,
+        paddingVertical: SIZES.xs,
+        borderRadius: SIZES.radiusFull,
+    },
+    statusPillText: {
+        fontSize: SIZES.caption,
+        ...FONTS.semiBold,
+    },
+    stageExpanded: {
+        marginTop: SIZES.md,
+        paddingTop: SIZES.md,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.borderLight,
+    },
+    datesRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginBottom: SIZES.md,
+    },
+    dateItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: SIZES.lg,
+        marginBottom: SIZES.xs,
+    },
+    dateText: {
+        fontSize: SIZES.small,
+        color: COLORS.textSecondary,
+        ...FONTS.regular,
+        marginLeft: 4,
+    },
+    uploadArea: {
+        borderWidth: 1.5,
+        borderColor: COLORS.border,
+        borderStyle: 'dashed',
+        borderRadius: SIZES.radiusMd,
+        padding: SIZES.lg,
+        alignItems: 'center',
+        marginVertical: SIZES.md,
+        backgroundColor: COLORS.bgElevated,
+    },
+    uploadText: {
+        fontSize: SIZES.body,
+        color: COLORS.textSecondary,
+        ...FONTS.medium,
+        marginTop: SIZES.sm,
+    },
+    uploadHint: {
+        fontSize: SIZES.caption,
+        color: COLORS.textMuted,
+        ...FONTS.regular,
+        marginTop: 2,
+    },
+    stageActions: {
+        marginTop: SIZES.sm,
+    },
+});
+
+export default WorkProductionScreen;
