@@ -22,6 +22,26 @@ export const useFinishingStore = create((set, get) => ({
             checking: false, ironing: false, threadCutting: false, qualityApproval: false,
             approvedBy: null, approvedAt: null, isReady: false,
         };
+
+        const ORDER = ['checking', 'ironing', 'threadCutting', 'qualityApproval'];
+        const targetIndex = ORDER.indexOf(field);
+
+        if (targetIndex > 0) {
+            for (let i = 0; i < targetIndex; i++) {
+                if (!current[ORDER[i]]) {
+                    return state;
+                }
+            }
+        }
+
+        if (current[field]) {
+            for (let i = targetIndex + 1; i < ORDER.length; i++) {
+                if (current[ORDER[i]]) {
+                    return state;
+                }
+            }
+        }
+
         return {
             finishingRecords: {
                 ...state.finishingRecords,

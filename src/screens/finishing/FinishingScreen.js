@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useFinishingStore } from '../../store/finishingStore';
@@ -26,11 +26,45 @@ const FinishingScreen = ({ navigation }) => {
     const [showApprovalModal, setShowApprovalModal] = useState(false);
     const [approverName, setApproverName] = useState('');
     const [showConfetti, setShowConfetti] = useState(false);
+    const fadeAnim = useRef(new Animated.Value(1)).current;
 
     const finishing = getFinishing(selectedOrder);
+
+    const isStepLocked = (itemKey) => {
+        const idx = CHECKLIST_ITEMS.findIndex(i => i.key === itemKey);
+        if (idx === 0) return false;
+        const prevKey = CHECKLIST_ITEMS[idx - 1].key;
+        return !finishing[prevKey];
+    };
+
+    const isStepCompletedLocally = (itemKey) => {
+        return finishing[itemKey];
+    }
+
     const allChecked = finishing.checking && finishing.ironing && finishing.threadCutting && finishing.qualityApproval;
 
     const handleToggle = (key) => {
+        if (isStepLocked(key)) {
+            Alert.alert('Step Locked', 'Complete previous step first.');
+            return;
+        }
+
+        const idx = CHECKLIST_ITEMS.findIndex(i => i.key === key);
+        if (isStepCompletedLocally(key)) {
+            if (idx < CHECKLIST_ITEMS.length - 1) {
+                const nextKey = CHECKLIST_ITEMS[idx + 1].key;
+                if (finishing[nextKey]) {
+                    Alert.alert('Step Locked', 'Cannot uncheck a step if subsequent steps are completed.');
+                    return;
+                }
+            }
+        }
+
+        Animated.sequence([
+            Animated.timing(fadeAnim, { toValue: 0.5, duration: 100, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true })
+        ]).start();
+
         toggleChecklist(selectedOrder, key);
     };
 
@@ -86,31 +120,41 @@ const FinishingScreen = ({ navigation }) => {
                 </View>
 
                 {/* Checklist */}
-                {CHECKLIST_ITEMS.map((item, idx) => (
-                    <TouchableOpacity
-                        key={item.key}
-                        activeOpacity={0.7}
-                        onPress={() => handleToggle(item.key)}
-                    >
-                        <Card style={[styles.checkItem, finishing[item.key] && styles.checkItemDone]}>
-                            <View style={styles.checkRow}>
-                                <TouchableOpacity
-                                    style={[styles.checkbox, finishing[item.key] && styles.checkboxChecked]}
-                                    onPress={() => handleToggle(item.key)}
-                                >
-                                    {finishing[item.key] && <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />}
-                                </TouchableOpacity>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={[styles.checkLabel, finishing[item.key] && styles.checkLabelDone]}>{item.label}</Text>
-                                    <Text style={styles.checkDesc}>{item.description}</Text>
-                                </View>
-                                <View style={[styles.checkIcon, { backgroundColor: finishing[item.key] ? COLORS.successLight : COLORS.bgElevated }]}>
-                                    <Ionicons name={item.icon} size={18} color={finishing[item.key] ? COLORS.success : COLORS.textMuted} />
-                                </View>
-                            </View>
-                        </Card>
-                    </TouchableOpacity>
-                ))}
+                {CHECKLIST_ITEMS.map((item, idx) => {
+                    const locked = isStepLocked(item.key);
+                    const completed = finishing[item.key];
+                    return (
+                        <Animated.View key={item.key} style={{ opacity: locked ? 0.5 : fadeAnim }}>
+                            <TouchableOpacity
+                                activeOpacity={locked ? 1 : 0.7}
+                                onPress={() => handleToggle(item.key)}
+                            >
+                                <Card style={[styles.checkItem, completed && styles.checkItemDone]}>
+                                    <View style={styles.checkRow}>
+                                        <TouchableOpacity
+                                            style={[styles.checkbox, completed && styles.checkboxChecked]}
+                                            onPress={() => handleToggle(item.key)}
+                                            disabled={locked}
+                                        >
+                                            {completed ? (
+                                                <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
+                                            ) : locked ? (
+                                                <Ionicons name="lock-closed" size={14} color={COLORS.border} />
+                                            ) : null}
+                                        </TouchableOpacity>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.checkLabel, completed && styles.checkLabelDone]}>{item.label}</Text>
+                                            <Text style={styles.checkDesc}>{item.description}</Text>
+                                        </View>
+                                        <View style={[styles.checkIcon, { backgroundColor: completed ? COLORS.successLight : COLORS.bgElevated }]}>
+                                            <Ionicons name={item.icon} size={18} color={completed ? COLORS.success : COLORS.textMuted} />
+                                        </View>
+                                    </View>
+                                </Card>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    );
+                })}
 
                 {/* Approval Info */}
                 {finishing.isReady && (
@@ -125,7 +169,7 @@ const FinishingScreen = ({ navigation }) => {
 
                 {/* Mark as Ready Button */}
                 {!finishing.isReady && (
-                    <View style={styles.readyBtnWrap}>
+                    <View style={[styles.readyBtnWrap, !allChecked && { opacity: 0.5 }]}>
                         <FormButton
                             title="✨ Mark as Ready"
                             icon="checkmark-done-outline"
