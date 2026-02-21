@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
+import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
+import { useThemeStore } from '../../store/themeStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
 import { Card, EmptyState } from '../../components/common';
 import { SearchBar, FilterChip, FormButton } from '../../components/forms';
 
 const StoreManagementScreen = ({ navigation }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
     const inventory = useStoreManagementStore((s) => s.inventory);
     const soldItems = useStoreManagementStore((s) => s.soldItems);
     const searchQuery = useStoreManagementStore((s) => s.searchQuery);
@@ -22,12 +25,27 @@ const StoreManagementScreen = ({ navigation }) => {
     const filteredInventory = getFilteredInventory();
     const categories = getCategories();
 
+    const flatListRef = useRef(null);
+
+    useEffect(() => {
+        if (flatListRef.current && categories.length > 0) {
+            const index = categories.indexOf(filterCategory);
+            if (index !== -1) {
+                flatListRef.current.scrollToIndex({
+                    index,
+                    animated: true,
+                    viewPosition: 0.5,
+                });
+            }
+        }
+    }, [filterCategory, categories]);
+
     const getStockStyle = (status) => {
         switch (status) {
-            case 'in_stock': return { bg: COLORS.successLight, text: COLORS.success, label: 'In Stock' };
-            case 'low_stock': return { bg: COLORS.warningLight, text: COLORS.warning, label: 'Low Stock' };
-            case 'out_of_stock': return { bg: COLORS.errorLight, text: COLORS.error, label: 'Out of Stock' };
-            default: return { bg: COLORS.borderLight, text: COLORS.textMuted, label: status };
+            case 'in_stock': return { bg: C.successLight, text: C.success, label: 'In Stock' };
+            case 'low_stock': return { bg: C.warningLight, text: C.warning, label: 'Low Stock' };
+            case 'out_of_stock': return { bg: C.errorLight, text: C.error, label: 'Out of Stock' };
+            default: return { bg: C.borderLight, text: C.textMuted, label: status };
         }
     };
 
@@ -46,9 +64,9 @@ const StoreManagementScreen = ({ navigation }) => {
         const stockStyle = getStockStyle(item.status);
         return (
             <Card elevated style={styles.inventoryCard}>
-                <View style={styles.inventoryHeader}>
-                    <View style={styles.inventoryImageWrap}>
-                        <Ionicons name="shirt-outline" size={24} color={COLORS.primary} />
+                <View style={[styles.inventoryHeader, { borderBottomColor: C.borderLight }]}>
+                    <View style={[styles.inventoryImageWrap, { backgroundColor: C.primaryMuted }]}>
+                        <Ionicons name="shirt-outline" size={24} color={C.primary} />
                     </View>
                     <View style={{ flex: 1, marginLeft: SIZES.md }}>
                         <Text style={styles.inventoryName}>{item.name}</Text>
@@ -111,29 +129,32 @@ const StoreManagementScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: C.bg }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Store</Text>
-                <Text style={styles.headerSubtitle}>Inventory & sales management</Text>
+                <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Store</Text>
+                <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Inventory & sales management</Text>
             </View>
 
             {/* Tabs */}
-            <View style={styles.tabBar}>
+            <View style={[styles.tabBar, { backgroundColor: C.bgElevated }]}>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'inventory' && styles.tabActive]}
+                    style={[styles.tab, activeTab === 'inventory' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
                     onPress={() => setActiveTab('inventory')}
                 >
-                    <Ionicons name="cube-outline" size={16} color={activeTab === 'inventory' ? COLORS.primary : COLORS.textMuted} />
-                    <Text style={[styles.tabText, activeTab === 'inventory' && styles.tabTextActive]}>
+                    <Ionicons name="cube-outline" size={16} color={activeTab === 'inventory' ? C.primary : C.textMuted} />
+                    <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'inventory' && [styles.tabTextActive, { color: C.primary }]]}>
                         Ready Stock ({inventory.length})
                     </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'sold' && styles.tabActive]}
+                    style={[styles.tab, activeTab === 'sold' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
                     onPress={() => setActiveTab('sold')}
                 >
-                    <Ionicons name="bag-check-outline" size={16} color={activeTab === 'sold' ? COLORS.primary : COLORS.textMuted} />
-                    <Text style={[styles.tabText, activeTab === 'sold' && styles.tabTextActive]}>
+                    <Ionicons name="bag-check-outline" size={16} color={activeTab === 'sold' ? C.primary : C.textMuted} />
+                    <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'sold' && [styles.tabTextActive, { color: C.primary }]]}>
                         Sold ({soldItems.length})
                     </Text>
                 </TouchableOpacity>
@@ -142,16 +163,31 @@ const StoreManagementScreen = ({ navigation }) => {
             {activeTab === 'inventory' && (
                 <>
                     <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search inventory..." />
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
-                        {categories.map(cat => (
+                    <FlatList
+                        ref={flatListRef}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{ flexGrow: 0, marginBottom: 12 }}
+                        contentContainerStyle={styles.filtersRow}
+                        data={categories}
+                        keyExtractor={(item) => item}
+                        renderItem={({ item: cat }) => (
                             <FilterChip
-                                key={cat}
                                 label={cat === 'all' ? 'All' : cat}
                                 active={filterCategory === cat}
                                 onPress={() => setFilterCategory(cat)}
                             />
-                        ))}
-                    </ScrollView>
+                        )}
+                        onScrollToIndexFailed={(info) => {
+                            setTimeout(() => {
+                                flatListRef.current?.scrollToIndex({
+                                    index: info.index,
+                                    animated: true,
+                                    viewPosition: 0.5
+                                });
+                            }, 500);
+                        }}
+                    />
                 </>
             )}
 
@@ -165,6 +201,8 @@ const StoreManagementScreen = ({ navigation }) => {
                         keyExtractor={(item) => item.id}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                        style={{ flex: 1 }}
                     />
                 )
             ) : (
@@ -174,12 +212,14 @@ const StoreManagementScreen = ({ navigation }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    style={{ flex: 1 }}
                     ListEmptyComponent={
                         <EmptyState icon="bag-outline" title="No sold items" subtitle="Sold items will appear here" />
                     }
                 />
             )}
-        </View>
+        </KeyboardAvoidingView>
     );
 };
 

@@ -1,11 +1,21 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, SHADOWS, FONTS } from '../../theme';
+import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
+import { useThemeStore } from '../../store/themeStore';
 
 export const Card = ({ children, style, onPress, elevated = false }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
     const content = (
-        <View style={[styles.card, elevated && SHADOWS.medium, style]}>
+        <View style={[
+            styles.card,
+            { backgroundColor: C.bgCard, borderColor: C.borderLight },
+            elevated && SHADOWS.medium,
+            style
+        ]}>
             {children}
         </View>
     );
@@ -19,39 +29,47 @@ export const Card = ({ children, style, onPress, elevated = false }) => {
     return content;
 };
 
-export const SectionHeader = ({ title, subtitle, actionText, onAction, icon }) => (
-    <View style={styles.sectionHeader}>
-        <View style={{ flex: 1 }}>
-            <View style={styles.sectionTitleRow}>
-                {icon && <Ionicons name={icon} size={20} color={COLORS.primary} style={{ marginRight: SIZES.sm }} />}
-                <Text style={styles.sectionTitle}>{title}</Text>
+export const SectionHeader = ({ title, subtitle, actionText, onAction, icon }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <View style={styles.sectionHeader}>
+            <View style={{ flex: 1 }}>
+                <View style={styles.sectionTitleRow}>
+                    {icon && <Ionicons name={icon} size={20} color={C.primary} style={{ marginRight: SIZES.sm }} />}
+                    <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>{title}</Text>
+                </View>
+                {subtitle && <Text style={[styles.sectionSubtitle, { color: C.textMuted }]}>{subtitle}</Text>}
             </View>
-            {subtitle && <Text style={styles.sectionSubtitle}>{subtitle}</Text>}
+            {actionText && (
+                <TouchableOpacity onPress={onAction} style={styles.sectionAction}>
+                    <Text style={[styles.sectionActionText, { color: C.primary }]}>{actionText}</Text>
+                    <Ionicons name="chevron-forward" size={14} color={C.primary} />
+                </TouchableOpacity>
+            )}
         </View>
-        {actionText && (
-            <TouchableOpacity onPress={onAction} style={styles.sectionAction}>
-                <Text style={styles.sectionActionText}>{actionText}</Text>
-                <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />
-            </TouchableOpacity>
-        )}
-    </View>
-);
+    );
+};
 
 export const StatusBadge = ({ status, size = 'medium' }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
     const getStatusStyle = () => {
         switch (status?.toLowerCase().replace(/\s/g, '_')) {
             case 'completed': case 'ready': case 'delivered':
-                return { bg: COLORS.successLight, text: COLORS.success, dot: COLORS.success };
+                return { bg: C.successLight, text: C.success, dot: C.success };
             case 'in_progress': case 'in_production': case 'stitching':
-                return { bg: COLORS.warningLight, text: COLORS.warning, dot: COLORS.warning };
+                return { bg: C.warningLight, text: C.warning, dot: C.warning };
             case 'pending':
-                return { bg: COLORS.slateLight, text: COLORS.slate, dot: COLORS.slate };
+                return { bg: C.slateLight, text: C.slate, dot: C.slate };
             case 'marking': case 'cutting':
-                return { bg: COLORS.primaryMuted, text: COLORS.primary, dot: COLORS.primary };
+                return { bg: C.primaryMuted, text: C.primary, dot: C.primary };
             case 'cancelled': case 'on_hold':
-                return { bg: COLORS.errorLight, text: COLORS.error, dot: COLORS.error };
+                return { bg: C.errorLight, text: C.error, dot: C.error };
             default:
-                return { bg: COLORS.borderLight, text: COLORS.textSecondary, dot: COLORS.textMuted };
+                return { bg: C.borderLight, text: C.textSecondary, dot: C.textMuted };
         }
     };
     const s = getStatusStyle();
@@ -67,35 +85,74 @@ export const StatusBadge = ({ status, size = 'medium' }) => {
     );
 };
 
-export const FloatingButton = ({ onPress, icon = 'add', label }) => (
-    <TouchableOpacity style={styles.fab} onPress={onPress} activeOpacity={0.85}>
-        <View style={styles.fabInner}>
-            <Ionicons name={icon} size={24} color={COLORS.textOnPrimary} />
-            {label && <Text style={styles.fabLabel}>{label}</Text>}
+export const FloatingButton = ({ onPress, icon = 'add', label }) => {
+    const insets = useSafeAreaInsets();
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <TouchableOpacity
+            style={[styles.fab, { bottom: SIZES.xl + insets.bottom }]}
+            onPress={onPress}
+            activeOpacity={0.85}
+        >
+            <View style={[styles.fabInner, { backgroundColor: C.primary }]}>
+                <Ionicons name={icon} size={24} color={C.textOnPrimary} />
+                {label && <Text style={[styles.fabLabel, { color: C.textOnPrimary }]}>{label}</Text>}
+            </View>
+        </TouchableOpacity>
+    );
+};
+
+export const ScreenWrapper = ({ children, style, useSafeBottom = true }) => {
+    const insets = useSafeAreaInsets();
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <View style={[
+            { flex: 1, backgroundColor: C.bg },
+            useSafeBottom && { paddingBottom: insets.bottom },
+            style
+        ]}>
+            {children}
         </View>
-    </TouchableOpacity>
-);
+    );
+};
 
-export const EmptyState = ({ icon, title, subtitle, actionLabel, onAction }) => (
-    <View style={styles.emptyState}>
-        <View style={styles.emptyIconWrap}>
-            <Ionicons name={icon || 'folder-open-outline'} size={48} color={COLORS.textMuted} />
+export const EmptyState = ({ icon, title, subtitle, actionLabel, onAction }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <View style={styles.emptyState}>
+            <View style={[styles.emptyIconWrap, { backgroundColor: C.primaryMuted }]}>
+                <Ionicons name={icon || 'folder-open-outline'} size={48} color={C.textMuted} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: C.textSecondary }]}>{title}</Text>
+            {subtitle && <Text style={[styles.emptySubtitle, { color: C.textMuted }]}>{subtitle}</Text>}
+            {actionLabel && (
+                <TouchableOpacity style={[styles.emptyAction, { backgroundColor: C.primary }]} onPress={onAction}>
+                    <Text style={[styles.emptyActionText, { color: C.textOnPrimary }]}>{actionLabel}</Text>
+                </TouchableOpacity>
+            )}
         </View>
-        <Text style={styles.emptyTitle}>{title}</Text>
-        {subtitle && <Text style={styles.emptySubtitle}>{subtitle}</Text>}
-        {actionLabel && (
-            <TouchableOpacity style={styles.emptyAction} onPress={onAction}>
-                <Text style={styles.emptyActionText}>{actionLabel}</Text>
-            </TouchableOpacity>
-        )}
-    </View>
-);
+    );
+};
 
-export const LoadingSkeleton = ({ width = '100%', height = 16, style }) => (
-    <View style={[styles.skeleton, { width, height, borderRadius: height / 2 }, style]} />
-);
+export const LoadingSkeleton = ({ width = '100%', height = 16, style }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+    return (
+        <View style={[styles.skeleton, { width, height, borderRadius: height / 2, backgroundColor: C.borderLight }, style]} />
+    );
+};
 
-export const Divider = ({ style }) => <View style={[styles.divider, style]} />;
+export const Divider = ({ style }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+    return <View style={[styles.divider, { backgroundColor: C.divider }, style]} />;
+};
 
 const styles = StyleSheet.create({
     card: {

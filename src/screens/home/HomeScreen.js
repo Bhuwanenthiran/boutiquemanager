@@ -1,14 +1,18 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
+import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
+import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
 import { useProductionStore } from '../../store/productionStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
+import { Card, StatusBadge } from '../../components/common';
 
 const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
     const orders = useOrderStore((s) => s.orders);
     const productionOrders = useProductionStore((s) => s.productionOrders);
     const inventory = useStoreManagementStore((s) => s.inventory);
@@ -20,149 +24,154 @@ const HomeScreen = ({ navigation }) => {
     const lowStockItems = inventory.filter(i => i.status === 'low_stock' || i.status === 'out_of_stock').length;
 
     const quickActions = [
-        { icon: 'add-circle-outline', label: 'New Order', color: COLORS.primary, screen: 'OrderEntry' },
-        { icon: 'cut-outline', label: 'Production', color: COLORS.accent, screen: 'StitchingProduction' },
-        { icon: 'checkmark-done-outline', label: 'Finishing', color: COLORS.success, screen: 'Finishing' },
-        { icon: 'storefront-outline', label: 'Store', color: COLORS.slate, screen: 'StoreManagement' },
+        { icon: 'add-circle-outline', label: 'New Order', color: C.primary, screen: 'OrderEntry' },
+        { icon: 'cut-outline', label: 'Production', color: C.accent, screen: 'StitchingProduction' },
+        { icon: 'checkmark-done-outline', label: 'Finishing', color: C.success, screen: 'Finishing' },
+        { icon: 'storefront-outline', label: 'Store', color: C.slate, screen: 'StoreManagement' },
     ];
 
     const recentOrders = orders.slice(0, 4);
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Ready': return COLORS.success;
-            case 'In Production': return COLORS.warning;
-            case 'Pending': return COLORS.slate;
-            case 'Marking': case 'Cutting': return COLORS.primary;
-            default: return COLORS.textMuted;
+            case 'Ready': return C.success;
+            case 'In Production': return C.warning;
+            case 'Pending': return C.slate;
+            case 'Marking': case 'Cutting': return C.primary;
+            default: return C.textMuted;
         }
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: C.bg }]}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Welcome back</Text>
-                        <Text style={styles.title}>Atelier Boutique</Text>
+                        <Text style={[styles.greeting, { color: C.textMuted }]}>Welcome back</Text>
+                        <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
                     </View>
-                    <TouchableOpacity style={styles.notifBtn}>
-                        <Ionicons name="notifications-outline" size={22} color={COLORS.textPrimary} />
-                        <View style={styles.notifDot} />
+                    <TouchableOpacity style={[styles.notifBtn, { backgroundColor: C.bgCard }]}>
+                        <Ionicons name="notifications-outline" size={22} color={C.textPrimary} />
+                        <View style={[styles.notifDot, { borderColor: C.bgCard }]} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Stats Cards */}
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsRow}>
-                    <View style={[styles.statCard, { backgroundColor: COLORS.primaryMuted }]}>
-                        <View style={[styles.statIcon, { backgroundColor: COLORS.primarySoft }]}>
-                            <Ionicons name="receipt-outline" size={20} color={COLORS.primary} />
+                    <View style={[styles.statCard, { backgroundColor: C.primaryMuted }]}>
+                        <View style={[styles.statIcon, { backgroundColor: C.primarySoft }]}>
+                            <Ionicons name="receipt-outline" size={20} color={C.primary} />
                         </View>
-                        <Text style={styles.statValue}>{orders.length}</Text>
-                        <Text style={styles.statLabel}>Total Orders</Text>
+                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{orders.length}</Text>
+                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Total Orders</Text>
                     </View>
-                    <View style={[styles.statCard, { backgroundColor: COLORS.warningLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: '#FFF0CC' }]}>
-                            <Ionicons name="construct-outline" size={20} color={COLORS.warning} />
+                    <View style={[styles.statCard, { backgroundColor: C.warningLight }]}>
+                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#FFF0CC' }]}>
+                            <Ionicons name="construct-outline" size={20} color={C.warning} />
                         </View>
-                        <Text style={styles.statValue}>{inProduction}</Text>
-                        <Text style={styles.statLabel}>In Production</Text>
+                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{inProduction}</Text>
+                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>In Production</Text>
                     </View>
-                    <View style={[styles.statCard, { backgroundColor: COLORS.successLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: '#D4EDDA' }]}>
-                            <Ionicons name="checkmark-circle-outline" size={20} color={COLORS.success} />
+                    <View style={[styles.statCard, { backgroundColor: C.successLight }]}>
+                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D4EDDA' }]}>
+                            <Ionicons name="checkmark-circle-outline" size={20} color={C.success} />
                         </View>
-                        <Text style={styles.statValue}>{readyOrders}</Text>
-                        <Text style={styles.statLabel}>Ready</Text>
+                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{readyOrders}</Text>
+                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Ready</Text>
                     </View>
-                    <View style={[styles.statCard, { backgroundColor: COLORS.slateLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: '#D0E2F0' }]}>
-                            <Ionicons name="time-outline" size={20} color={COLORS.slate} />
+                    <View style={[styles.statCard, { backgroundColor: C.slateLight }]}>
+                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D0E2F0' }]}>
+                            <Ionicons name="time-outline" size={20} color={C.slate} />
                         </View>
-                        <Text style={styles.statValue}>{pendingOrders}</Text>
-                        <Text style={styles.statLabel}>Pending</Text>
+                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{pendingOrders}</Text>
+                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Pending</Text>
                     </View>
                 </ScrollView>
 
                 {/* Revenue Card */}
-                <View style={styles.revenueCard}>
+                <View style={[styles.revenueCard, { backgroundColor: isDark ? C.bgCard : C.textPrimary }]}>
                     <View style={styles.revenueHeader}>
                         <View>
-                            <Text style={styles.revenueLabel}>Total Revenue</Text>
-                            <Text style={styles.revenueValue}>₹{totalRevenue.toLocaleString('en-IN')}</Text>
+                            <Text style={[styles.revenueLabel, { color: isDark ? C.textMuted : C.textLight }]}>Total Revenue</Text>
+                            <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{totalRevenue.toLocaleString('en-IN')}</Text>
                         </View>
-                        <View style={styles.revenueBadge}>
-                            <Ionicons name="trending-up" size={14} color={COLORS.success} />
-                            <Text style={styles.revenueBadgeText}>+12%</Text>
+                        <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.successLight : 'rgba(107, 158, 107, 0.2)' }]}>
+                            <Ionicons name="trending-up" size={14} color={C.success} />
+                            <Text style={[styles.revenueBadgeText, { color: C.success }]}>+12%</Text>
                         </View>
                     </View>
-                    <View style={styles.revenueBar}>
-                        <View style={[styles.revenueBarFill, { width: '72%' }]} />
+                    <View style={[styles.revenueBar, { backgroundColor: isDark ? C.border : 'rgba(255,255,255,0.15)' }]}>
+                        <View style={[styles.revenueBarFill, { width: '72%', backgroundColor: C.primary }]} />
                     </View>
-                    <Text style={styles.revenueSubtext}>₹{(totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
+                    <Text style={[styles.revenueSubtext, { color: isDark ? C.textMuted : C.textLight }]}>₹{(totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
                 </View>
 
                 {/* Quick Actions */}
-                <Text style={styles.sectionTitle}>Quick Actions</Text>
+                <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Quick Actions</Text>
                 <View style={styles.actionsGrid}>
                     {quickActions.map((action, idx) => (
                         <TouchableOpacity
                             key={idx}
-                            style={styles.actionCard}
+                            style={[styles.actionCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
                             onPress={() => navigation.navigate(action.screen)}
                             activeOpacity={0.7}
                         >
                             <View style={[styles.actionIcon, { backgroundColor: action.color + '18' }]}>
                                 <Ionicons name={action.icon} size={24} color={action.color} />
                             </View>
-                            <Text style={styles.actionLabel}>{action.label}</Text>
+                            <Text style={[styles.actionLabel, { color: C.textSecondary }]}>{action.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
 
                 {/* Alerts */}
                 {lowStockItems > 0 && (
-                    <TouchableOpacity style={styles.alertCard} onPress={() => navigation.navigate('StoreManagement')} activeOpacity={0.8}>
-                        <View style={styles.alertIconWrap}>
-                            <Ionicons name="warning-outline" size={20} color={COLORS.warning} />
+                    <TouchableOpacity
+                        style={[styles.alertCard, { backgroundColor: C.warningLight, borderColor: C.warning + '30' }]}
+                        onPress={() => navigation.navigate('StoreManagement')}
+                        activeOpacity={0.8}
+                    >
+                        <View style={[styles.alertIconWrap, { backgroundColor: C.warning + '20' }]}>
+                            <Ionicons name="warning-outline" size={20} color={C.warning} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.alertTitle}>Low Stock Alert</Text>
-                            <Text style={styles.alertDesc}>{lowStockItems} item{lowStockItems > 1 ? 's' : ''} need restocking</Text>
+                            <Text style={[styles.alertTitle, { color: C.textPrimary }]}>Low Stock Alert</Text>
+                            <Text style={[styles.alertDesc, { color: C.textSecondary }]}>{lowStockItems} item{lowStockItems > 1 ? 's' : ''} need restocking</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+                        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
                     </TouchableOpacity>
                 )}
 
                 {/* Recent Orders */}
                 <View style={styles.sectionRow}>
-                    <Text style={styles.sectionTitle}>Recent Orders</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
-                        <Text style={styles.seeAll}>See All</Text>
+                    <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent Orders</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('OrdersTab')}>
+                        <Text style={[styles.seeAll, { color: C.primary }]}>See All</Text>
                     </TouchableOpacity>
                 </View>
 
                 {recentOrders.map((order) => (
-                    <TouchableOpacity key={order.id} style={styles.orderCard} activeOpacity={0.7}
-                        onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}>
+                    <Card
+                        key={order.id}
+                        style={styles.recentOrderCard}
+                        onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+                    >
                         <View style={styles.orderTop}>
                             <View>
-                                <Text style={styles.orderId}>{order.id}</Text>
-                                <Text style={styles.orderCustomer}>{order.customerName}</Text>
+                                <Text style={[styles.orderId, { color: C.textMuted }]}>{order.id}</Text>
+                                <Text style={[styles.orderCustomer, { color: C.textPrimary }]}>{order.customerName}</Text>
                             </View>
-                            <View style={[styles.statusDot, { backgroundColor: getStatusColor(order.status) }]}>
-                                <Text style={styles.statusText}>{order.status}</Text>
-                            </View>
+                            <StatusBadge status={order.status} size="small" />
                         </View>
-                        <View style={styles.orderBottom}>
+                        <View style={[styles.orderBottom, { borderTopColor: C.borderLight }]}>
                             <View style={styles.orderMeta}>
-                                <Ionicons name="shirt-outline" size={13} color={COLORS.textMuted} />
-                                <Text style={styles.orderMetaText}>{order.designName}</Text>
+                                <Ionicons name="shirt-outline" size={13} color={C.textMuted} />
+                                <Text style={[styles.orderMetaText, { color: C.textMuted }]}>{order.designName}</Text>
                             </View>
-                            <Text style={styles.orderAmount}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
+                            <Text style={[styles.orderAmount, { color: C.primary }]}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
                         </View>
-                    </TouchableOpacity>
+                    </Card>
                 ))}
 
                 <View style={{ height: 100 }} />
@@ -229,6 +238,7 @@ const styles = StyleSheet.create({
         borderRadius: SIZES.radiusLg,
         padding: SIZES.base,
         marginRight: SIZES.md,
+        ...SHADOWS.small,
     },
     statIcon: {
         width: 36,
@@ -386,15 +396,9 @@ const styles = StyleSheet.create({
         ...FONTS.regular,
         marginTop: 1,
     },
-    orderCard: {
-        backgroundColor: COLORS.bgCard,
+    recentOrderCard: {
         marginHorizontal: SIZES.lg,
-        borderRadius: SIZES.radiusLg,
-        padding: SIZES.base,
         marginBottom: SIZES.sm,
-        borderWidth: 1,
-        borderColor: COLORS.borderLight,
-        ...SHADOWS.small,
     },
     orderTop: {
         flexDirection: 'row',
@@ -413,16 +417,6 @@ const styles = StyleSheet.create({
         color: COLORS.textPrimary,
         ...FONTS.semiBold,
         marginTop: 2,
-    },
-    statusDot: {
-        paddingHorizontal: SIZES.md,
-        paddingVertical: SIZES.xs + 1,
-        borderRadius: SIZES.radiusFull,
-    },
-    statusText: {
-        fontSize: SIZES.caption,
-        color: COLORS.textOnPrimary,
-        ...FONTS.semiBold,
     },
     orderBottom: {
         flexDirection: 'row',

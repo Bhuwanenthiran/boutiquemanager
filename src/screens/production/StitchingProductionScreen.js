@@ -159,7 +159,12 @@ const StitchingProductionScreen = ({ navigation }) => {
             </View>
 
             {/* Tailor Filter */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ flexGrow: 0, marginBottom: 12 }}
+                contentContainerStyle={styles.filtersRow}
+            >
                 <FilterChip label="All Tailors" active={filterTailor === 'all'} onPress={() => setFilterTailor('all')} />
                 {tailors.map(t => (
                     <FilterChip
@@ -184,6 +189,7 @@ const StitchingProductionScreen = ({ navigation }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    style={{ flex: 1 }}
                 />
             )}
         </View>

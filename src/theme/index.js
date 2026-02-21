@@ -1,6 +1,7 @@
 // Atelier Boutique — Premium Design System
-// Inspired by luxury tailoring studios: warm ivories, muted rose, gold accents
+import { Platform } from 'react-native';
 
+// Inspired by luxury tailoring studios: warm ivories, muted rose, gold accents
 export const COLORS = {
     // Primary Palette — Warm & Luxurious
     primary: '#B8860B',        // Dark goldenrod — the thread of luxury
@@ -55,17 +56,76 @@ export const COLORS = {
     slateLight: '#E8F0F8',
 };
 
+export const DARK_COLORS = {
+    // Primary Palette — same gold for brand consistency
+    primary: '#D4A843',
+    primaryLight: '#E8C47A',
+    primarySoft: '#3A2E1A',
+    primaryMuted: '#2A2010',
+
+    // Accent — Muted Rose (brightened slightly for dark bg)
+    accent: '#D48A8A',
+    accentLight: '#5A3030',
+    accentSoft: '#3A2020',
+
+    // Backgrounds
+    bg: '#1A1612',             // Deep warm dark
+    bgCard: '#231E18',
+    bgElevated: '#2A2318',
+    bgOverlay: 'rgba(0, 0, 0, 0.6)',
+
+    // Text
+    textPrimary: '#F5EDE0',
+    textSecondary: '#B0A090',
+    textMuted: '#7A6B5D',
+    textLight: '#5A4E42',
+    textOnPrimary: '#1A1612',
+
+    // Status
+    success: '#7BBD7B',
+    successLight: '#1A2E1A',
+    warning: '#D4A843',
+    warningLight: '#2E2610',
+    error: '#D48A8A',
+    errorLight: '#2E1A1A',
+    info: '#8AB8D4',
+    infoLight: '#1A2A36',
+
+    // Borders & Dividers
+    border: '#3A3028',
+    borderLight: '#2E2820',
+    divider: '#302820',
+
+    // Shadows
+    shadowColor: '#000000',
+
+    // Special
+    gold: '#D4A843',
+    goldLight: '#3A2E1A',
+    rose: '#D48A8A',
+    roseLight: '#3A2020',
+    sage: '#7BBD7B',
+    sageLight: '#1A2E1A',
+    slate: '#8AB8D4',
+    slateLight: '#1A2A36',
+};
+
+// Helper to get the right palette based on theme
+export const getColors = (isDark) => (isDark ? DARK_COLORS : COLORS);
+
 export const FONTS = {
-    // Using system fonts with fallbacks for a refined feel
-    light: { fontWeight: '300' },
-    regular: { fontWeight: '400' },
-    medium: { fontWeight: '500' },
-    semiBold: { fontWeight: '600' },
-    bold: { fontWeight: '700' },
+    light: { fontWeight: '300', letterSpacing: 0.5 },
+    regular: { fontWeight: '400', letterSpacing: 0.2 },
+    medium: { fontWeight: '500', letterSpacing: 0.1 },
+    semiBold: { fontWeight: '600', letterSpacing: -0.2 },
+    bold: { fontWeight: '700', letterSpacing: -0.5 },
+
+    serif: { fontFamily: Platform.OS === 'ios' ? 'Times New Roman' : 'serif' },
+    heading: { lineHeight: 34, letterSpacing: -0.8 },
+    body: { lineHeight: 22 },
 };
 
 export const SIZES = {
-    // Spacing
     xs: 4,
     sm: 8,
     md: 12,
@@ -75,22 +135,20 @@ export const SIZES = {
     xxl: 32,
     xxxl: 40,
 
-    // Border Radius
     radiusSm: 8,
     radiusMd: 12,
     radiusLg: 16,
     radiusXl: 20,
     radiusFull: 999,
 
-    // Font Sizes
     caption: 11,
-    small: 12,
-    body: 14,
-    bodyLg: 16,
-    subtitle: 18,
-    title: 22,
-    heading: 28,
-    hero: 34,
+    small: 13,
+    body: 15,
+    bodyLg: 17,
+    subtitle: 20,
+    title: 24,
+    heading: 30,
+    hero: 38,
 };
 
 export const SHADOWS = {
@@ -123,3 +181,5 @@ export const SHADOWS = {
         elevation: 4,
     },
 };
+
+export default { COLORS, DARK_COLORS, getColors, FONTS, SIZES, SHADOWS };

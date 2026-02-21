@@ -77,3 +77,8 @@ ui-debug.log
 .gemini/
 .agent/
 SKILL.md
+node_modules/
+.expo/
+dist/
+build/
+.env

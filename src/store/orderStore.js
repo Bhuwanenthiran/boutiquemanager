@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { orderService } from '../services/orderService';
 import { MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_DESIGNS, MOCK_TAILORS, MEASUREMENT_FIELDS } from '../services/mockData';
 
 export const useOrderStore = create((set, get) => ({
@@ -10,6 +11,19 @@ export const useOrderStore = create((set, get) => ({
     draftOrder: null,
     filterStatus: 'all',
     searchQuery: '',
+    isLoading: false,
+
+    // Actions
+    fetchOrders: async () => {
+        set({ isLoading: true });
+        try {
+            const orders = await orderService.getOrders();
+            set({ orders, isLoading: false });
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Failed to fetch orders:', error);
+        }
+    },
 
     // Get filtered orders
     getFilteredOrders: () => {
@@ -32,23 +46,55 @@ export const useOrderStore = create((set, get) => ({
     setFilterStatus: (status) => set({ filterStatus: status }),
     setSearchQuery: (query) => set({ searchQuery: query }),
 
-    addOrder: (order) => set((state) => ({
-        orders: [{ ...order, id: `ORD${String(state.orders.length + 1).padStart(3, '0')}`, createdAt: new Date().toISOString().split('T')[0], isDraft: false }, ...state.orders],
-        draftOrder: null,
-    })),
+    addOrder: async (orderData) => {
+        set({ isLoading: true });
+        try {
+            const newOrder = await orderService.addOrder(orderData);
+            set((state) => ({
+                orders: [newOrder, ...state.orders],
+                draftOrder: null,
+                isLoading: false,
+            }));
+            return newOrder;
+        } catch (error) {
+            set({ isLoading: false });
+            throw error;
+        }
+    },
 
-    updateOrder: (id, updates) => set((state) => ({
-        orders: state.orders.map(o => o.id === id ? { ...o, ...updates } : o),
-    })),
+    updateOrder: async (id, updates) => {
+        try {
+            const updated = await orderService.updateOrder(id, updates);
+            set((state) => ({
+                orders: state.orders.map(o => o.id === id ? { ...o, ...updated } : o),
+            }));
+        } catch (error) {
+            console.error('Update failed:', error);
+        }
+    },
 
-    deleteOrder: (id) => set((state) => ({
-        orders: state.orders.filter(o => o.id !== id),
-    })),
+    deleteOrder: async (id) => {
+        try {
+            await orderService.deleteOrder(id);
+            set((state) => ({
+                orders: state.orders.filter(o => o.id !== id),
+            }));
+        } catch (error) {
+            console.error('Delete failed:', error);
+        }
+    },
 
     saveDraft: (draft) => set({ draftOrder: draft }),
     clearDraft: () => set({ draftOrder: null }),
 
-    updateOrderStatus: (id, status) => set((state) => ({
-        orders: state.orders.map(o => o.id === id ? { ...o, status } : o),
-    })),
+    updateOrderStatus: async (id, status) => {
+        try {
+            await orderService.updateOrder(id, { status });
+            set((state) => ({
+                orders: state.orders.map(o => o.id === id ? { ...o, status } : o),
+            }));
+        } catch (error) {
+            console.error('Update status failed:', error);
+        }
+    },
 }));

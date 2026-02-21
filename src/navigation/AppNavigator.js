@@ -2,11 +2,14 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Platform, Switch, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS } from '../theme';
+import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../theme';
+import { useThemeStore } from '../store/themeStore';
 
 // Screens
+import LoginScreen from '../screens/auth/LoginScreen';
 import HomeScreen from '../screens/home/HomeScreen';
 import OrderListScreen from '../screens/orders/OrderListScreen';
 import OrderEntryScreen from '../screens/orders/OrderEntryScreen';
@@ -17,6 +20,9 @@ import FinishingScreen from '../screens/finishing/FinishingScreen';
 import ShootScreen from '../screens/shoot/ShootScreen';
 import StoreManagementScreen from '../screens/store/StoreManagementScreen';
 import CatalogueScreen from '../screens/catalogue/CatalogueScreen';
+
+// Auth
+import { useAuthStore } from '../store/authStore';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,37 +43,96 @@ const TAB_LABELS = {
     MoreTab: 'More',
 };
 
-const BottomTabs = () => (
-    <Tab.Navigator
-        screenOptions={({ route }) => ({
-            headerShown: false,
-            tabBarIcon: ({ focused, size }) => {
-                const icons = TAB_ICONS[route.name];
-                return (
-                    <View style={focused ? styles.activeTabIcon : null}>
-                        <Ionicons
-                            name={focused ? icons.active : icons.inactive}
-                            size={focused ? 22 : 20}
-                            color={focused ? COLORS.primary : COLORS.textMuted}
-                        />
-                    </View>
-                );
-            },
-            tabBarLabel: TAB_LABELS[route.name],
-            tabBarActiveTintColor: COLORS.primary,
-            tabBarInactiveTintColor: COLORS.textMuted,
-            tabBarStyle: styles.tabBar,
-            tabBarLabelStyle: styles.tabLabel,
-            tabBarItemStyle: styles.tabItem,
-        })}
-    >
-        <Tab.Screen name="HomeTab" component={HomeScreen} />
-        <Tab.Screen name="OrdersTab" component={OrderListScreen} />
-        <Tab.Screen name="ProductionTab" component={StitchingProductionScreen} />
-        <Tab.Screen name="StoreTab" component={StoreManagementScreen} />
-        <Tab.Screen name="MoreTab" component={MoreNavigator} />
-    </Tab.Navigator>
-);
+const AdminTabs = () => {
+    const insets = useSafeAreaInsets();
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarIcon: ({ focused, size }) => {
+                    const icons = TAB_ICONS[route.name];
+                    return (
+                        <View style={focused ? [styles.activeTabIcon, { backgroundColor: C.primaryMuted }] : null}>
+                            <Ionicons
+                                name={focused ? icons.active : icons.inactive}
+                                size={focused ? 22 : 20}
+                                color={focused ? C.primary : C.textMuted}
+                            />
+                        </View>
+                    );
+                },
+                tabBarLabel: TAB_LABELS[route.name],
+                tabBarActiveTintColor: C.primary,
+                tabBarInactiveTintColor: C.textMuted,
+                tabBarStyle: [
+                    styles.tabBar,
+                    {
+                        height: 60 + insets.bottom,
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : SIZES.sm,
+                        backgroundColor: C.bgCard,
+                        borderTopColor: C.borderLight
+                    }
+                ],
+                tabBarLabelStyle: styles.tabLabel,
+                tabBarItemStyle: [
+                    styles.tabItem,
+                    { paddingBottom: insets.bottom > 0 ? 0 : 4 }
+                ],
+            })}
+        >
+            <Tab.Screen name="HomeTab" component={HomeScreen} />
+            <Tab.Screen name="OrdersTab" component={OrderListScreen} />
+            <Tab.Screen name="ProductionTab" component={StitchingProductionScreen} />
+            <Tab.Screen name="StoreTab" component={StoreManagementScreen} />
+            <Tab.Screen name="MoreTab" component={MoreNavigator} />
+        </Tab.Navigator>
+    );
+};
+
+// Staff Tab Navigator (Limited Views: Orders & Production only)
+const StaffTabs = () => {
+    const insets = useSafeAreaInsets();
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarIcon: ({ focused }) => {
+                    const icons = TAB_ICONS[route.name];
+                    return (
+                        <View style={focused ? [styles.activeTabIcon, { backgroundColor: C.primaryMuted }] : null}>
+                            <Ionicons
+                                name={focused ? icons.active : icons.inactive}
+                                size={focused ? 22 : 20}
+                                color={focused ? C.primary : C.textMuted}
+                            />
+                        </View>
+                    );
+                },
+                tabBarLabel: TAB_LABELS[route.name],
+                tabBarActiveTintColor: C.primary,
+                tabBarStyle: [
+                    styles.tabBar,
+                    {
+                        height: 60 + insets.bottom,
+                        paddingBottom: insets.bottom > 0 ? insets.bottom : SIZES.sm,
+                        backgroundColor: C.bgCard,
+                        borderTopColor: C.borderLight
+                    }
+                ],
+            })}
+        >
+            <Tab.Screen name="OrdersTab" component={OrderListScreen} />
+            <Tab.Screen name="ProductionTab" component={StitchingProductionScreen} />
+            <Tab.Screen name="MoreTab" component={MoreNavigator} />
+        </Tab.Navigator>
+    );
+};
 
 const MoreStack = createStackNavigator();
 
@@ -84,80 +149,143 @@ const MoreNavigator = () => (
 // More Menu Screen
 
 const MoreMenuScreen = ({ navigation }) => {
+    const { isDark, toggleTheme } = useThemeStore();
+    const logout = useAuthStore((s) => s.logout);
+    const C = getColors(isDark);
+
     const menuItems = [
-        { label: 'Work Production', subtitle: 'Stitching, Aari & Detailing stages', icon: 'layers-outline', screen: 'WorkProduction', color: COLORS.accent },
-        { label: 'Finishing', subtitle: 'Quality check & ready for delivery', icon: 'checkmark-done-outline', screen: 'Finishing', color: COLORS.success },
-        { label: 'Media & Shoot', subtitle: 'Product photography & social uploads', icon: 'camera-outline', screen: 'Shoot', color: COLORS.primary },
-        { label: 'Catalogue', subtitle: 'Hold, cancelled & alteration records', icon: 'albums-outline', screen: 'Catalogue', color: COLORS.slate },
+        { label: 'Work Production', subtitle: 'Stitching, Aari & Detailing stages', icon: 'layers-outline', screen: 'WorkProduction', color: C.accent },
+        { label: 'Finishing', subtitle: 'Quality check & ready for delivery', icon: 'checkmark-done-outline', screen: 'Finishing', color: C.success },
+        { label: 'Media & Shoot', subtitle: 'Product photography & social uploads', icon: 'camera-outline', screen: 'Shoot', color: C.primary },
+        { label: 'Catalogue', subtitle: 'Hold, cancelled & alteration records', icon: 'albums-outline', screen: 'Catalogue', color: C.slate },
     ];
 
+    const handleLogout = () => {
+        Alert.alert(
+            'Log Out',
+            'Are you sure you want to log out?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Log Out', style: 'destructive', onPress: () => logout() },
+            ]
+        );
+    };
+
     return (
-        <View style={styles.moreContainer}>
-            <View style={styles.moreHeader}>
-                <Text style={styles.moreTitle}>More</Text>
-                <Text style={styles.moreSubtitle}>Additional modules</Text>
+        <View style={[styles.moreContainer, { backgroundColor: C.bg }]}>
+            <View style={[styles.moreHeader, { borderBottomColor: C.borderLight }]}>
+                <Text style={[styles.moreTitle, { color: C.textPrimary }]}>More</Text>
+                <Text style={[styles.moreSubtitle, { color: C.textMuted }]}>Additional modules</Text>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.moreContent}>
                 {menuItems.map((item, idx) => (
                     <TouchableOpacity
                         key={idx}
-                        style={styles.menuCard}
+                        style={[styles.menuCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
                         onPress={() => navigation.navigate(item.screen)}
                         activeOpacity={0.7}
                     >
-                        <View style={[styles.menuIcon, { backgroundColor: item.color + '18' }]}>
+                        <View style={[styles.menuIcon, { backgroundColor: item.color + '22' }]}>
                             <Ionicons name={item.icon} size={24} color={item.color} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.menuLabel}>{item.label}</Text>
-                            <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                            <Text style={[styles.menuLabel, { color: C.textPrimary }]}>{item.label}</Text>
+                            <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>{item.subtitle}</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+                        <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
                     </TouchableOpacity>
                 ))}
 
+                {/* ── Dark Mode Toggle ── */}
+                <View style={[styles.settingsCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}>
+                    <View style={[styles.settingsIcon, { backgroundColor: isDark ? C.primarySoft : C.primaryMuted }]}>
+                        <Ionicons
+                            name={isDark ? 'moon' : 'sunny-outline'}
+                            size={22}
+                            color={C.primary}
+                        />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.menuLabel, { color: C.textPrimary }]}>Dark Mode</Text>
+                        <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>
+                            {isDark ? 'Dark theme active' : 'Light theme active'}
+                        </Text>
+                    </View>
+                    <Switch
+                        value={isDark}
+                        onValueChange={toggleTheme}
+                        trackColor={{ false: C.borderLight, true: C.primary + '60' }}
+                        thumbColor={isDark ? C.primary : C.bgCard}
+                    />
+                </View>
+
+                {/* ── Log Out Button ── */}
+                <TouchableOpacity
+                    style={[styles.logoutCard, { backgroundColor: C.errorLight, borderColor: C.error + '40' }]}
+                    onPress={handleLogout}
+                    activeOpacity={0.75}
+                >
+                    <View style={[styles.settingsIcon, { backgroundColor: C.error + '22' }]}>
+                        <Ionicons name="log-out-outline" size={22} color={C.error} />
+                    </View>
+                    <Text style={[styles.menuLabel, { color: C.error, flex: 1 }]}>Log Out</Text>
+                    <Ionicons name="chevron-forward" size={18} color={C.error + '80'} />
+                </TouchableOpacity>
+
                 {/* App Info */}
                 <View style={styles.appInfo}>
-                    <View style={styles.appLogoWrap}>
-                        <Ionicons name="diamond-outline" size={28} color={COLORS.primary} />
+                    <View style={[styles.appLogoWrap, { backgroundColor: C.primaryMuted }]}>
+                        <Ionicons name="diamond-outline" size={28} color={C.primary} />
                     </View>
-                    <Text style={styles.appName}>Atelier Boutique</Text>
-                    <Text style={styles.appVersion}>Version 1.0.0</Text>
-                    <Text style={styles.appTagline}>Crafted with care for tailoring excellence</Text>
+                    <Text style={[styles.appName, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                    <Text style={[styles.appVersion, { color: C.textMuted }]}>Version 1.0.0</Text>
+                    <Text style={[styles.appTagline, { color: C.textMuted }]}>Crafted with care for tailoring excellence</Text>
                 </View>
             </ScrollView>
         </View>
     );
 };
 
-const AppNavigator = () => (
-    <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="MainTabs" component={BottomTabs} />
-            <Stack.Screen
-                name="OrderEntry"
-                component={OrderEntryScreen}
-                options={{ presentation: 'modal' }}
-            />
-            <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
-            <Stack.Screen name="StitchingProduction" component={StitchingProductionScreen} />
-            <Stack.Screen name="WorkProduction" component={WorkProductionScreen} />
-            <Stack.Screen name="Finishing" component={FinishingScreen} />
-            <Stack.Screen name="Shoot" component={ShootScreen} />
-            <Stack.Screen name="StoreManagement" component={StoreManagementScreen} />
-            <Stack.Screen name="Catalogue" component={CatalogueScreen} />
-        </Stack.Navigator>
-    </NavigationContainer>
-);
+const AppNavigator = () => {
+    const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+    const role = useAuthStore((s) => s.role);
+
+    return (
+        <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {!isAuthenticated ? (
+                    // Auth Stack
+                    <Stack.Screen name="Login" component={LoginScreen} />
+                ) : (
+                    // App Stack
+                    <>
+                        <Stack.Screen
+                            name="MainTabs"
+                            component={role === 'admin' ? AdminTabs : StaffTabs}
+                        />
+                        <Stack.Screen
+                            name="OrderEntry"
+                            component={OrderEntryScreen}
+                            options={{ presentation: 'modal' }}
+                        />
+                        <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
+                        <Stack.Screen name="StitchingProduction" component={StitchingProductionScreen} />
+                        <Stack.Screen name="WorkProduction" component={WorkProductionScreen} />
+                        <Stack.Screen name="Finishing" component={FinishingScreen} />
+                        <Stack.Screen name="Shoot" component={ShootScreen} />
+                        <Stack.Screen name="StoreManagement" component={StoreManagementScreen} />
+                        <Stack.Screen name="Catalogue" component={CatalogueScreen} />
+                    </>
+                )}
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+};
 
 const styles = StyleSheet.create({
     tabBar: {
-        backgroundColor: COLORS.bgCard,
         borderTopWidth: 1,
-        borderTopColor: COLORS.borderLight,
-        height: Platform.OS === 'ios' ? 88 : 64,
         paddingTop: SIZES.xs,
-        paddingBottom: Platform.OS === 'ios' ? SIZES.xl : SIZES.sm,
         ...SHADOWS.small,
     },
     tabLabel: {
@@ -169,7 +297,6 @@ const styles = StyleSheet.create({
         paddingTop: 4,
     },
     activeTabIcon: {
-        backgroundColor: COLORS.primaryMuted,
         borderRadius: SIZES.radiusFull,
         padding: 6,
         marginBottom: -4,
@@ -177,38 +304,62 @@ const styles = StyleSheet.create({
     // More Menu
     moreContainer: {
         flex: 1,
-        backgroundColor: COLORS.bg,
     },
     moreHeader: {
         paddingHorizontal: SIZES.lg,
         paddingTop: SIZES.xxxl + SIZES.lg,
         paddingBottom: SIZES.md,
+        borderBottomWidth: 1,
+        marginBottom: SIZES.sm,
     },
     moreTitle: {
         fontSize: SIZES.heading,
-        color: COLORS.textPrimary,
         ...FONTS.bold,
         letterSpacing: -0.5,
     },
     moreSubtitle: {
         fontSize: SIZES.small,
-        color: COLORS.textMuted,
         ...FONTS.regular,
         marginTop: 2,
     },
     moreContent: {
         paddingHorizontal: SIZES.lg,
         paddingBottom: SIZES.xxxl,
+        paddingTop: SIZES.sm,
     },
     menuCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.bgCard,
         borderRadius: SIZES.radiusLg,
         padding: SIZES.base,
         marginBottom: SIZES.md,
         borderWidth: 1,
-        borderColor: COLORS.borderLight,
+        ...SHADOWS.small,
+    },
+    settingsCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: SIZES.radiusLg,
+        padding: SIZES.base,
+        marginBottom: SIZES.md,
+        borderWidth: 1,
+        ...SHADOWS.small,
+    },
+    settingsIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: SIZES.radiusMd,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: SIZES.md,
+    },
+    logoutCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: SIZES.radiusLg,
+        padding: SIZES.base,
+        marginBottom: SIZES.md,
+        borderWidth: 1,
         ...SHADOWS.small,
     },
     menuIcon: {
@@ -221,12 +372,10 @@ const styles = StyleSheet.create({
     },
     menuLabel: {
         fontSize: SIZES.bodyLg,
-        color: COLORS.textPrimary,
         ...FONTS.semiBold,
     },
     menuSubtitle: {
         fontSize: SIZES.small,
-        color: COLORS.textMuted,
         ...FONTS.regular,
         marginTop: 2,
     },
@@ -239,25 +388,21 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: COLORS.primaryMuted,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: SIZES.md,
     },
     appName: {
         fontSize: SIZES.subtitle,
-        color: COLORS.textPrimary,
         ...FONTS.bold,
     },
     appVersion: {
         fontSize: SIZES.caption,
-        color: COLORS.textMuted,
         ...FONTS.regular,
         marginTop: 4,
     },
     appTagline: {
         fontSize: SIZES.small,
-        color: COLORS.textMuted,
         ...FONTS.regular,
         marginTop: SIZES.sm,
         fontStyle: 'italic',

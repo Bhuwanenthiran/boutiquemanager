@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
+import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
+import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
 import { Card, StatusBadge, FloatingButton, EmptyState } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
@@ -15,6 +16,8 @@ const ORDER_FILTERS = [
 ];
 
 const OrderListScreen = ({ navigation }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
     const orders = useOrderStore((s) => s.orders);
     const filterStatus = useOrderStore((s) => s.filterStatus);
     const searchQuery = useOrderStore((s) => s.searchQuery);
@@ -26,68 +29,66 @@ const OrderListScreen = ({ navigation }) => {
 
     const getPriorityColor = (priority) => {
         switch (priority) {
-            case 'high': return COLORS.error;
-            case 'medium': return COLORS.warning;
-            case 'low': return COLORS.success;
-            default: return COLORS.textMuted;
+            case 'high': return C.error;
+            case 'medium': return C.warning;
+            case 'low': return C.success;
+            default: return C.textMuted;
         }
     };
 
     const renderOrder = ({ item }) => (
-        <TouchableOpacity
-            style={styles.orderCard}
+        <Card
             onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-            activeOpacity={0.7}
         >
             <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderLeft}>
                     <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]} />
                     <View>
-                        <Text style={styles.orderId}>{item.id}</Text>
-                        <Text style={styles.customerName}>{item.customerName}</Text>
+                        <Text style={[styles.orderId, { color: C.textMuted }]}>{item.id}</Text>
+                        <Text style={[styles.customerName, { color: C.textPrimary }]}>{item.customerName}</Text>
                     </View>
                 </View>
                 <StatusBadge status={item.status} size="small" />
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={[styles.cardBody, { borderTopColor: C.borderLight }]}>
                 <View style={styles.detailRow}>
-                    <Ionicons name="shirt-outline" size={14} color={COLORS.textMuted} />
-                    <Text style={styles.detailText}>{item.designName}</Text>
+                    <Ionicons name="shirt-outline" size={14} color={C.textMuted} />
+                    <Text style={[styles.detailText, { color: C.textSecondary }]}>{item.designName}</Text>
                 </View>
                 <View style={styles.detailRow}>
-                    <Ionicons name="calendar-outline" size={14} color={COLORS.textMuted} />
-                    <Text style={styles.detailText}>Due: {item.deliveryDate}</Text>
+                    <Ionicons name="calendar-outline" size={14} color={C.textMuted} />
+                    <Text style={[styles.detailText, { color: C.textSecondary }]}>Due: {item.deliveryDate}</Text>
                 </View>
             </View>
 
-            <View style={styles.cardFooter}>
+            <View style={[styles.cardFooter, { borderTopColor: C.borderLight }]}>
                 <View>
-                    <Text style={styles.amountLabel}>Total</Text>
-                    <Text style={styles.amountValue}>₹{item.totalAmount.toLocaleString('en-IN')}</Text>
+                    <Text style={[styles.amountLabel, { color: C.textMuted }]}>Total</Text>
+                    <Text style={[styles.amountValue, { color: C.primary }]}>₹{item.totalAmount.toLocaleString('en-IN')}</Text>
                 </View>
                 <View style={styles.balanceWrap}>
-                    <Text style={styles.balanceLabel}>Balance</Text>
-                    <Text style={[styles.balanceValue, item.balanceAmount > 0 && { color: COLORS.error }]}>
+                    <Text style={[styles.balanceLabel, { color: C.textMuted }]}>Balance</Text>
+                    <Text style={[styles.balanceValue, { color: C.textPrimary }, item.balanceAmount > 0 && { color: C.error }]}>
                         ₹{item.balanceAmount.toLocaleString('en-IN')}
                     </Text>
                 </View>
                 {item.tailorName && (
-                    <View style={styles.tailorBadge}>
-                        <Ionicons name="person-outline" size={12} color={COLORS.primary} />
-                        <Text style={styles.tailorName}>{item.tailorName}</Text>
+                    <View style={[styles.tailorBadge, { backgroundColor: C.primaryMuted }]}>
+                        <Ionicons name="person-outline" size={12} color={C.primary} />
+                        <Text style={[styles.tailorName, { color: C.primary }]}>{item.tailorName}</Text>
                     </View>
                 )}
             </View>
-        </TouchableOpacity>
+        </Card>
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: C.bg }]}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Orders</Text>
-                <Text style={styles.headerSubtitle}>{orders.length} total orders</Text>
+                <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Orders</Text>
+                <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>{orders.length} total orders</Text>
             </View>
 
             {/* Search */}
@@ -98,7 +99,12 @@ const OrderListScreen = ({ navigation }) => {
             />
 
             {/* Filters */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ flexGrow: 0, marginBottom: 12 }}
+                contentContainerStyle={styles.filtersRow}
+            >
                 {ORDER_FILTERS.map((f) => (
                     <FilterChip
                         key={f.value}
@@ -125,6 +131,7 @@ const OrderListScreen = ({ navigation }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    style={{ flex: 1 }}
                 />
             )}
 
@@ -165,15 +172,6 @@ const styles = StyleSheet.create({
     listContent: {
         paddingHorizontal: SIZES.lg,
         paddingBottom: 100,
-    },
-    orderCard: {
-        backgroundColor: COLORS.bgCard,
-        borderRadius: SIZES.radiusLg,
-        padding: SIZES.base,
-        marginBottom: SIZES.md,
-        borderWidth: 1,
-        borderColor: COLORS.borderLight,
-        ...SHADOWS.small,
     },
     cardHeader: {
         flexDirection: 'row',
