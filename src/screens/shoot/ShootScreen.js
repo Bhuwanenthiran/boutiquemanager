@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useShootStore } from '../../store/shootStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -91,119 +91,129 @@ const ShootScreen = ({ navigation }) => {
                 <Text style={styles.headerSubtitle}>Product photography & social uploads</Text>
             </View>
 
-            {/* Order Selector */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.orderTabs}
-                keyboardShouldPersistTaps="handled"
-            >
-                {orders.map(o => (
-                    <TouchableOpacity
-                        key={o.id}
-                        style={[styles.orderTab, selectedOrder === o.id && styles.orderTabActive]}
-                        onPress={() => setSelectedOrder(o.id)}
-                        disabled={isLoading}
+            {orders.length === 0 ? (
+                <EmptyState
+                    icon="camera-outline"
+                    title="No orders for shoot"
+                    subtitle="Orders ready for delivery will appear here for product photography"
+                />
+            ) : (
+                <>
+                    {/* Order Selector */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.orderTabs}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={[styles.orderTabId, selectedOrder === o.id && styles.orderTabIdActive]}>{o.id}</Text>
-                        <Text style={[styles.orderTabName, selectedOrder === o.id && styles.orderTabNameActive]} numberOfLines={1}>{o.designName}</Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* Image Gallery */}
-                <Card elevated>
-                    <View style={styles.sectionHead}>
-                        <Ionicons name="images-outline" size={18} color={COLORS.primary} />
-                        <Text style={styles.sectionTitle}>Photo Gallery</Text>
-                    </View>
-
-                    {currentShoot?.images && currentShoot.images.length > 0 ? (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageGallery}>
-                            {currentShoot.images.map((uri, idx) => (
-                                <View key={idx} style={styles.imageThumb}>
-                                    <Image source={{ uri }} style={styles.thumbImage} />
-                                </View>
-                            ))}
-                            <TouchableOpacity style={styles.addImageBtn} onPress={handlePickImage} disabled={isLoading}>
-                                <Ionicons name="add" size={28} color={COLORS.textMuted} />
+                        {orders.map(o => (
+                            <TouchableOpacity
+                                key={o.id}
+                                style={[styles.orderTab, selectedOrder === o.id && styles.orderTabActive]}
+                                onPress={() => setSelectedOrder(o.id)}
+                                disabled={isLoading}
+                            >
+                                <Text style={[styles.orderTabId, selectedOrder === o.id && styles.orderTabIdActive]}>{o.id}</Text>
+                                <Text style={[styles.orderTabName, selectedOrder === o.id && styles.orderTabNameActive]} numberOfLines={1}>{o.designName}</Text>
                             </TouchableOpacity>
-                        </ScrollView>
-                    ) : (
-                        <TouchableOpacity style={styles.uploadArea} onPress={handlePickImage} disabled={isLoading}>
-                            <View style={styles.uploadIconWrap}>
-                                <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary} />
-                            </View>
-                            <Text style={styles.uploadText}>Upload Product Photos</Text>
-                            <Text style={styles.uploadHint}>Tap to select from gallery</Text>
-                        </TouchableOpacity>
-                    )}
-                </Card>
+                        ))}
+                    </ScrollView>
 
-                {/* Upload Status Tracking */}
-                <Card elevated>
-                    <View style={styles.sectionHead}>
-                        <Ionicons name="share-social-outline" size={18} color={COLORS.primary} />
-                        <Text style={styles.sectionTitle}>Upload Status</Text>
-                    </View>
-
-                    {statusItems.map((item) => (
-                        <TouchableOpacity
-                            key={item.key}
-                            style={styles.statusItem}
-                            onPress={() => handleToggleStatus(item.key)}
-                            activeOpacity={0.7}
-                            disabled={isLoading}
-                        >
-                            <View style={[styles.statusIcon, { backgroundColor: item.color + '18' }]}>
-                                <Ionicons name={item.icon} size={20} color={item.color} />
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Image Gallery */}
+                        <Card elevated>
+                            <View style={styles.sectionHead}>
+                                <Ionicons name="images-outline" size={18} color={COLORS.primary} />
+                                <Text style={styles.sectionTitle}>Photo Gallery</Text>
                             </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.statusLabel}>{item.label}</Text>
-                                <Text style={styles.statusDesc}>
-                                    {currentShoot?.[item.key] ? 'Uploaded ✓' : 'Not uploaded yet'}
-                                </Text>
-                            </View>
-                            <View style={[
-                                styles.statusToggle,
-                                currentShoot?.[item.key] && styles.statusToggleActive,
-                            ]}>
-                                {currentShoot?.[item.key] ? (
-                                    <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
-                                ) : (
-                                    <Ionicons name="close" size={14} color={COLORS.textMuted} />
-                                )}
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </Card>
 
-                {/* Share Button */}
-                <Card elevated style={styles.shareCard}>
-                    <View style={styles.shareContent}>
-                        <Ionicons name="paper-plane-outline" size={22} color={COLORS.primary} />
-                        <View style={{ marginLeft: SIZES.md, flex: 1 }}>
-                            <Text style={styles.shareTitle}>Share This Creation</Text>
-                            <Text style={styles.shareDesc}>Share on social media or with the customer</Text>
-                        </View>
-                    </View>
-                    <FormButton
-                        title="Share"
-                        icon="share-outline"
-                        onPress={handleShare}
-                        variant="outline"
-                        size="small"
-                        disabled={isLoading}
-                    />
-                </Card>
+                            {currentShoot?.images && currentShoot.images.length > 0 ? (
+                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageGallery}>
+                                    {currentShoot.images.map((uri, idx) => (
+                                        <View key={idx} style={styles.imageThumb}>
+                                            <Image source={{ uri }} style={styles.thumbImage} />
+                                        </View>
+                                    ))}
+                                    <TouchableOpacity style={styles.addImageBtn} onPress={handlePickImage} disabled={isLoading}>
+                                        <Ionicons name="add" size={28} color={COLORS.textMuted} />
+                                    </TouchableOpacity>
+                                </ScrollView>
+                            ) : (
+                                <TouchableOpacity style={styles.uploadArea} onPress={handlePickImage} disabled={isLoading}>
+                                    <View style={styles.uploadIconWrap}>
+                                        <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary} />
+                                    </View>
+                                    <Text style={styles.uploadText}>Upload Product Photos</Text>
+                                    <Text style={styles.uploadHint}>Tap to select from gallery</Text>
+                                </TouchableOpacity>
+                            )}
+                        </Card>
 
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                        {/* Upload Status Tracking */}
+                        <Card elevated>
+                            <View style={styles.sectionHead}>
+                                <Ionicons name="share-social-outline" size={18} color={COLORS.primary} />
+                                <Text style={styles.sectionTitle}>Upload Status</Text>
+                            </View>
+
+                            {statusItems.map((item) => (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    style={styles.statusItem}
+                                    onPress={() => handleToggleStatus(item.key)}
+                                    activeOpacity={0.7}
+                                    disabled={isLoading}
+                                >
+                                    <View style={[styles.statusIcon, { backgroundColor: item.color + '18' }]}>
+                                        <Ionicons name={item.icon} size={20} color={item.color} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.statusLabel}>{item.label}</Text>
+                                        <Text style={styles.statusDesc}>
+                                            {currentShoot?.[item.key] ? 'Uploaded ✓' : 'Not uploaded yet'}
+                                        </Text>
+                                    </View>
+                                    <View style={[
+                                        styles.statusToggle,
+                                        currentShoot?.[item.key] && styles.statusToggleActive,
+                                    ]}>
+                                        {currentShoot?.[item.key] ? (
+                                            <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
+                                        ) : (
+                                            <Ionicons name="close" size={14} color={COLORS.textMuted} />
+                                        )}
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </Card>
+
+                        {/* Share Button */}
+                        <Card elevated style={styles.shareCard}>
+                            <View style={styles.shareContent}>
+                                <Ionicons name="paper-plane-outline" size={22} color={COLORS.primary} />
+                                <View style={{ marginLeft: SIZES.md, flex: 1 }}>
+                                    <Text style={styles.shareTitle}>Share This Creation</Text>
+                                    <Text style={styles.shareDesc}>Share on social media or with the customer</Text>
+                                </View>
+                            </View>
+                            <FormButton
+                                title="Share"
+                                icon="share-outline"
+                                onPress={handleShare}
+                                variant="outline"
+                                size="small"
+                                disabled={isLoading}
+                            />
+                        </Card>
+
+                        <View style={{ height: 40 }} />
+                    </ScrollView>
+                </>
+            )}
         </View>
     );
 };

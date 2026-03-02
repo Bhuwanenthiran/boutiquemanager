@@ -501,6 +501,45 @@ const extraStyles = StyleSheet.create({
         ...FONTS.bold,
         marginLeft: 8,
     },
+    emptyState: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: SIZES.xxl,
+        minHeight: 300,
+    },
+    emptyIconWrap: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SIZES.lg,
+    },
+    emptyTitle: {
+        fontSize: SIZES.subtitle,
+        ...FONTS.bold,
+        marginBottom: SIZES.sm,
+        textAlign: 'center',
+    },
+    emptySubtitle: {
+        fontSize: SIZES.body,
+        ...FONTS.regular,
+        textAlign: 'center',
+        marginBottom: SIZES.xl,
+        paddingHorizontal: SIZES.lg,
+        lineHeight: 22,
+    },
+    emptyAction: {
+        paddingHorizontal: SIZES.xl,
+        paddingVertical: SIZES.md,
+        borderRadius: SIZES.radiusMd,
+        ...SHADOWS.small,
+    },
+    emptyActionText: {
+        fontSize: SIZES.body,
+        ...FONTS.semiBold,
+    },
 });
 
 // Update styles at the bottom to merge extraStyles

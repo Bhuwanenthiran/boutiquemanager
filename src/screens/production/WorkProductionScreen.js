@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
 import { FormInput, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -74,171 +74,180 @@ const WorkProductionScreen = ({ navigation }) => {
                 <View style={{ width: 40 }} />
             </View>
 
-            {/* Order Selector */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.orderTabs}
-                keyboardShouldPersistTaps="handled"
-            >
-                {productionOrders.map(order => (
-                    <TouchableOpacity
-                        key={order.id}
-                        style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
-                        onPress={() => setSelectedOrder(order.id)}
-                        disabled={isLoading}
+            {productionOrders.length === 0 ? (
+                <EmptyState
+                    icon="construct-outline"
+                    title="No orders in production"
+                    subtitle="Orders will appear here once they move to production stages"
+                />
+            ) : (
+                <>
+                    {/* Order Selector */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.orderTabs}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
-                        <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
-                            {order.customerName}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            {/* Overall Progress */}
-            <View style={styles.overallProgress}>
-                <View style={styles.progressInfo}>
-                    <Text style={styles.progressTitle}>Overall Progress</Text>
-                    <Text style={styles.progressPercent}>{getCompletionPercent()}%</Text>
-                </View>
-                <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, { width: `${getCompletionPercent()}%` }]} />
-                </View>
-            </View>
-
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.stagesContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* Stepper */}
-                {STAGES.map((stage, idx) => {
-                    const data = getStageData(stage.key);
-                    const isExpanded = expandedStage === stage.key;
-                    const isCompleted = data.status === 'completed';
-                    const isInProgress = data.status === 'in_progress';
-
-                    return (
-                        <View key={stage.key}>
-                            {/* Connector Line */}
-                            {idx > 0 && (
-                                <View style={styles.connectorWrap}>
-                                    <View style={[
-                                        styles.connectorLine,
-                                        getStageData(STAGES[idx - 1].key).status === 'completed' && styles.connectorCompleted,
-                                    ]} />
-                                </View>
-                            )}
-
+                        {productionOrders.map(order => (
                             <TouchableOpacity
-                                activeOpacity={0.7}
-                                onPress={() => setExpandedStage(isExpanded ? null : stage.key)}
+                                key={order.id}
+                                style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
+                                onPress={() => setSelectedOrder(order.id)}
                                 disabled={isLoading}
                             >
-                                <Card elevated style={[
-                                    styles.stageCard,
-                                    isCompleted && styles.stageCardCompleted,
-                                    isInProgress && styles.stageCardActive,
-                                ]}>
-                                    <View style={styles.stageHeader}>
-                                        <View style={[styles.stageIconWrap, { backgroundColor: stage.color + '18' }]}>
-                                            {isCompleted ? (
-                                                <Ionicons name="checkmark-circle" size={22} color={COLORS.success} />
-                                            ) : (
-                                                <Ionicons name={stage.icon} size={22} color={stage.color} />
-                                            )}
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={styles.stageLabel}>{stage.label}</Text>
-                                            <Text style={styles.stageSubtitle}>{stage.subtitle}</Text>
-                                        </View>
-                                        <View style={styles.stageStatusWrap}>
-                                            {isCompleted && (
-                                                <View style={[styles.statusPill, { backgroundColor: COLORS.successLight }]}>
-                                                    <Text style={[styles.statusPillText, { color: COLORS.success }]}>Done</Text>
-                                                </View>
-                                            )}
-                                            {isInProgress && (
-                                                <View style={[styles.statusPill, { backgroundColor: COLORS.warningLight }]}>
-                                                    <Text style={[styles.statusPillText, { color: COLORS.warning }]}>Active</Text>
-                                                </View>
-                                            )}
-                                            {!isCompleted && !isInProgress && (
-                                                <View style={[styles.statusPill, { backgroundColor: COLORS.borderLight }]}>
-                                                    <Text style={[styles.statusPillText, { color: COLORS.textMuted }]}>Pending</Text>
-                                                </View>
-                                            )}
-                                            <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textMuted} style={{ marginLeft: 8 }} />
-                                        </View>
-                                    </View>
+                                <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
+                                <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
+                                    {order.customerName}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
 
-                                    {/* Expanded Content */}
-                                    {isExpanded && (
-                                        <View style={styles.stageExpanded}>
-                                            {/* Dates */}
-                                            <View style={styles.datesRow}>
-                                                {data.startedAt && (
-                                                    <View style={styles.dateItem}>
-                                                        <Ionicons name="play-circle-outline" size={14} color={COLORS.success} />
-                                                        <Text style={styles.dateText}>Started: {formatDate(data.startedAt)}</Text>
-                                                    </View>
-                                                )}
-                                                {data.completedAt && (
-                                                    <View style={styles.dateItem}>
-                                                        <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.success} />
-                                                        <Text style={styles.dateText}>Completed: {formatDate(data.completedAt)}</Text>
-                                                    </View>
-                                                )}
-                                            </View>
+                    {/* Overall Progress */}
+                    <View style={styles.overallProgress}>
+                        <View style={styles.progressInfo}>
+                            <Text style={styles.progressTitle}>Overall Progress</Text>
+                            <Text style={styles.progressPercent}>{getCompletionPercent()}%</Text>
+                        </View>
+                        <View style={styles.progressBar}>
+                            <View style={[styles.progressFill, { width: `${getCompletionPercent()}%` }]} />
+                        </View>
+                    </View>
 
-                                            {/* Notes */}
-                                            <FormInput
-                                                label="Notes"
-                                                value={data.notes}
-                                                onChangeText={(v) => handleNotesUpdate(stage.key, v)}
-                                                placeholder="Add production notes..."
-                                                multiline
-                                                icon="document-text-outline"
-                                                editable={!isLoading}
-                                            />
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.stagesContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Stepper */}
+                        {STAGES.map((stage, idx) => {
+                            const data = getStageData(stage.key);
+                            const isExpanded = expandedStage === stage.key;
+                            const isCompleted = data.status === 'completed';
+                            const isInProgress = data.status === 'in_progress';
 
-                                            {/* Image Upload Placeholder */}
-                                            <TouchableOpacity style={styles.uploadArea} disabled={isLoading}>
-                                                <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
-                                                <Text style={styles.uploadText}>Upload Work Progress</Text>
-                                                <Text style={styles.uploadHint}>Tap to add photos</Text>
-                                            </TouchableOpacity>
-
-                                            {/* Action Buttons */}
-                                            <View style={styles.stageActions}>
-                                                {!isCompleted && !isInProgress && (
-                                                    <FormButton
-                                                        title="Start Production"
-                                                        icon="play-outline"
-                                                        onPress={() => handleStageAction(stage.key, 'start')}
-                                                        loading={isLoading}
-                                                    />
-                                                )}
-                                                {isInProgress && (
-                                                    <FormButton
-                                                        title="Mark Complete"
-                                                        icon="checkmark-outline"
-                                                        onPress={() => handleStageAction(stage.key, 'complete')}
-                                                        loading={isLoading}
-                                                    />
-                                                )}
-                                            </View>
+                            return (
+                                <View key={stage.key}>
+                                    {/* Connector Line */}
+                                    {idx > 0 && (
+                                        <View style={styles.connectorWrap}>
+                                            <View style={[
+                                                styles.connectorLine,
+                                                getStageData(STAGES[idx - 1].key).status === 'completed' && styles.connectorCompleted,
+                                            ]} />
                                         </View>
                                     )}
-                                </Card>
-                            </TouchableOpacity>
-                        </View>
-                    );
-                })}
 
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                                    <TouchableOpacity
+                                        activeOpacity={0.7}
+                                        onPress={() => setExpandedStage(isExpanded ? null : stage.key)}
+                                        disabled={isLoading}
+                                    >
+                                        <Card elevated style={[
+                                            styles.stageCard,
+                                            isCompleted && styles.stageCardCompleted,
+                                            isInProgress && styles.stageCardActive,
+                                        ]}>
+                                            <View style={styles.stageHeader}>
+                                                <View style={[styles.stageIconWrap, { backgroundColor: stage.color + '18' }]}>
+                                                    {isCompleted ? (
+                                                        <Ionicons name="checkmark-circle" size={22} color={COLORS.success} />
+                                                    ) : (
+                                                        <Ionicons name={stage.icon} size={22} color={stage.color} />
+                                                    )}
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={styles.stageLabel}>{stage.label}</Text>
+                                                    <Text style={styles.stageSubtitle}>{stage.subtitle}</Text>
+                                                </View>
+                                                <View style={styles.stageStatusWrap}>
+                                                    {isCompleted && (
+                                                        <View style={[styles.statusPill, { backgroundColor: COLORS.successLight }]}>
+                                                            <Text style={[styles.statusPillText, { color: COLORS.success }]}>Done</Text>
+                                                        </View>
+                                                    )}
+                                                    {isInProgress && (
+                                                        <View style={[styles.statusPill, { backgroundColor: COLORS.warningLight }]}>
+                                                            <Text style={[styles.statusPillText, { color: COLORS.warning }]}>Active</Text>
+                                                        </View>
+                                                    )}
+                                                    {!isCompleted && !isInProgress && (
+                                                        <View style={[styles.statusPill, { backgroundColor: COLORS.borderLight }]}>
+                                                            <Text style={[styles.statusPillText, { color: COLORS.textMuted }]}>Pending</Text>
+                                                        </View>
+                                                    )}
+                                                    <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textMuted} style={{ marginLeft: 8 }} />
+                                                </View>
+                                            </View>
+
+                                            {/* Expanded Content */}
+                                            {isExpanded && (
+                                                <View style={styles.stageExpanded}>
+                                                    {/* Dates */}
+                                                    <View style={styles.datesRow}>
+                                                        {data.startedAt && (
+                                                            <View style={styles.dateItem}>
+                                                                <Ionicons name="play-circle-outline" size={14} color={COLORS.success} />
+                                                                <Text style={styles.dateText}>Started: {formatDate(data.startedAt)}</Text>
+                                                            </View>
+                                                        )}
+                                                        {data.completedAt && (
+                                                            <View style={styles.dateItem}>
+                                                                <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.success} />
+                                                                <Text style={styles.dateText}>Completed: {formatDate(data.completedAt)}</Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+
+                                                    {/* Notes */}
+                                                    <FormInput
+                                                        label="Notes"
+                                                        value={data.notes}
+                                                        onChangeText={(v) => handleNotesUpdate(stage.key, v)}
+                                                        placeholder="Add production notes..."
+                                                        multiline
+                                                        icon="document-text-outline"
+                                                        editable={!isLoading}
+                                                    />
+
+                                                    {/* Image Upload Placeholder */}
+                                                    <TouchableOpacity style={styles.uploadArea} disabled={isLoading}>
+                                                        <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
+                                                        <Text style={styles.uploadText}>Upload Work Progress</Text>
+                                                        <Text style={styles.uploadHint}>Tap to add photos</Text>
+                                                    </TouchableOpacity>
+
+                                                    {/* Action Buttons */}
+                                                    <View style={styles.stageActions}>
+                                                        {!isCompleted && !isInProgress && (
+                                                            <FormButton
+                                                                title="Start Production"
+                                                                icon="play-outline"
+                                                                onPress={() => handleStageAction(stage.key, 'start')}
+                                                                loading={isLoading}
+                                                            />
+                                                        )}
+                                                        {isInProgress && (
+                                                            <FormButton
+                                                                title="Mark Complete"
+                                                                icon="checkmark-outline"
+                                                                onPress={() => handleStageAction(stage.key, 'complete')}
+                                                                loading={isLoading}
+                                                            />
+                                                        )}
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </Card>
+                                    </TouchableOpacity>
+                                </View>
+                            );
+                        })}
+                        <View style={{ height: 40 }} />
+                    </ScrollView>
+                </>
+            )}
         </View>
     );
 };

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useFinishingStore } from '../../store/finishingStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
 import { FormButton, FormInput } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -111,122 +111,132 @@ const FinishingScreen = ({ navigation }) => {
                 <Text style={styles.headerSubtitle}>Quality check & prepare for delivery</Text>
             </View>
 
-            {/* Order Selector */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.orderTabs}
-                keyboardShouldPersistTaps="handled"
-            >
-                {orders.map(order => (
-                    <TouchableOpacity
-                        key={order.id}
-                        style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
-                        onPress={() => setSelectedOrder(order.id)}
-                        disabled={isLoading}
+            {orders.length === 0 ? (
+                <EmptyState
+                    icon="checkmark-done-outline"
+                    title="No orders for finishing"
+                    subtitle="Orders completed in production will appear here for quality check"
+                />
+            ) : (
+                <>
+                    {/* Order Selector */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.orderTabs}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
-                        <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
-                            {order.customerName}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* Progress Circle */}
-                <View style={styles.progressSection}>
-                    <View style={styles.progressCircle}>
-                        <Text style={styles.progressNumber}>{completedCount}/{CHECKLIST_ITEMS.length}</Text>
-                        <Text style={styles.progressLabel}>Completed</Text>
-                    </View>
-                    <View style={styles.progressBarWrap}>
-                        <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-                    </View>
-                </View>
-
-                {/* Checklist */}
-                {CHECKLIST_ITEMS.map((item, idx) => {
-                    const locked = isStepLocked(item.key);
-                    const completed = finishing[item.key];
-                    return (
-                        <Animated.View key={item.key} style={{ opacity: locked ? 0.5 : fadeAnim }}>
+                        {orders.map(order => (
                             <TouchableOpacity
-                                activeOpacity={locked ? 1 : 0.7}
-                                onPress={() => handleToggle(item.key)}
-                                disabled={locked || isLoading}
+                                key={order.id}
+                                style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
+                                onPress={() => setSelectedOrder(order.id)}
+                                disabled={isLoading}
                             >
-                                <Card style={[styles.checkItem, completed && styles.checkItemDone]}>
-                                    <View style={styles.checkRow}>
-                                        <TouchableOpacity
-                                            style={[styles.checkbox, completed && styles.checkboxChecked]}
-                                            onPress={() => handleToggle(item.key)}
-                                            disabled={locked || isLoading}
-                                        >
-                                            {completed ? (
-                                                <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
-                                            ) : locked ? (
-                                                <Ionicons name="lock-closed" size={14} color={COLORS.border} />
-                                            ) : null}
-                                        </TouchableOpacity>
-                                        <View style={{ flex: 1 }}>
-                                            <Text style={[styles.checkLabel, completed && styles.checkLabelDone]}>{item.label}</Text>
-                                            <Text style={styles.checkDesc}>{item.description}</Text>
-                                        </View>
-                                        <View style={[styles.checkIcon, { backgroundColor: completed ? COLORS.successLight : COLORS.bgElevated }]}>
-                                            <Ionicons name={item.icon} size={18} color={completed ? COLORS.success : COLORS.textMuted} />
-                                        </View>
-                                    </View>
-                                </Card>
+                                <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
+                                <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
+                                    {order.customerName}
+                                </Text>
                             </TouchableOpacity>
-                        </Animated.View>
-                    );
-                })}
+                        ))}
+                    </ScrollView>
 
-                {/* Approval Info */}
-                {finishing.isReady && (
-                    <Card style={styles.approvalCard}>
-                        <Ionicons name="ribbon-outline" size={24} color={COLORS.success} />
-                        <View style={{ marginLeft: SIZES.md, flex: 1 }}>
-                            <Text style={styles.approvalTitle}>Approved & Ready</Text>
-                            <Text style={styles.approvalMeta}>By {finishing.approvedBy} on {formatDate(finishing.approvedAt)}</Text>
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Progress Circle */}
+                        <View style={styles.progressSection}>
+                            <View style={styles.progressCircle}>
+                                <Text style={styles.progressNumber}>{completedCount}/{CHECKLIST_ITEMS.length}</Text>
+                                <Text style={styles.progressLabel}>Completed</Text>
+                            </View>
+                            <View style={styles.progressBarWrap}>
+                                <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
+                            </View>
                         </View>
-                    </Card>
-                )}
 
-                {/* Mark as Ready Button */}
-                {!finishing.isReady && (
-                    <View style={[styles.readyBtnWrap, !allChecked && { opacity: 0.5 }]}>
-                        <FormButton
-                            title="✨ Mark as Ready"
-                            icon="checkmark-done-outline"
-                            onPress={() => {
-                                if (!allChecked) {
-                                    Alert.alert('Incomplete', 'Please complete all checklist items first');
-                                    return;
-                                }
-                                setShowApprovalModal(true);
-                            }}
-                            disabled={!allChecked}
-                            loading={isLoading}
-                        />
-                    </View>
-                )}
+                        {/* Checklist */}
+                        {CHECKLIST_ITEMS.map((item, idx) => {
+                            const locked = isStepLocked(item.key);
+                            const completed = finishing[item.key];
+                            return (
+                                <Animated.View key={item.key} style={{ opacity: locked ? 0.5 : fadeAnim }}>
+                                    <TouchableOpacity
+                                        activeOpacity={locked ? 1 : 0.7}
+                                        onPress={() => handleToggle(item.key)}
+                                        disabled={locked || isLoading}
+                                    >
+                                        <Card style={[styles.checkItem, completed && styles.checkItemDone]}>
+                                            <View style={styles.checkRow}>
+                                                <TouchableOpacity
+                                                    style={[styles.checkbox, completed && styles.checkboxChecked]}
+                                                    onPress={() => handleToggle(item.key)}
+                                                    disabled={locked || isLoading}
+                                                >
+                                                    {completed ? (
+                                                        <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
+                                                    ) : locked ? (
+                                                        <Ionicons name="lock-closed" size={14} color={COLORS.border} />
+                                                    ) : null}
+                                                </TouchableOpacity>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={[styles.checkLabel, completed && styles.checkLabelDone]}>{item.label}</Text>
+                                                    <Text style={styles.checkDesc}>{item.description}</Text>
+                                                </View>
+                                                <View style={[styles.checkIcon, { backgroundColor: completed ? COLORS.successLight : COLORS.bgElevated }]}>
+                                                    <Ionicons name={item.icon} size={18} color={completed ? COLORS.success : COLORS.textMuted} />
+                                                </View>
+                                            </View>
+                                        </Card>
+                                    </TouchableOpacity>
+                                </Animated.View>
+                            );
+                        })}
 
-                {/* Confetti Animation Placeholder */}
-                {showConfetti && (
-                    <View style={styles.confettiOverlay}>
-                        <Text style={styles.confettiEmoji}>🎉</Text>
-                        <Text style={styles.confettiText}>Order is Ready!</Text>
-                    </View>
-                )}
+                        {/* Approval Info */}
+                        {finishing.isReady && (
+                            <Card style={styles.approvalCard}>
+                                <Ionicons name="ribbon-outline" size={24} color={COLORS.success} />
+                                <View style={{ marginLeft: SIZES.md, flex: 1 }}>
+                                    <Text style={styles.approvalTitle}>Approved & Ready</Text>
+                                    <Text style={styles.approvalMeta}>By {finishing.approvedBy} on {formatDate(finishing.approvedAt)}</Text>
+                                </View>
+                            </Card>
+                        )}
 
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                        {/* Mark as Ready Button */}
+                        {!finishing.isReady && (
+                            <View style={[styles.readyBtnWrap, !allChecked && { opacity: 0.5 }]}>
+                                <FormButton
+                                    title="✨ Mark as Ready"
+                                    icon="checkmark-done-outline"
+                                    onPress={() => {
+                                        if (!allChecked) {
+                                            Alert.alert('Incomplete', 'Please complete all checklist items first');
+                                            return;
+                                        }
+                                        setShowApprovalModal(true);
+                                    }}
+                                    disabled={!allChecked}
+                                    loading={isLoading}
+                                />
+                            </View>
+                        )}
+
+                        {/* Confetti Animation Placeholder */}
+                        {showConfetti && (
+                            <View style={styles.confettiOverlay}>
+                                <Text style={styles.confettiEmoji}>🎉</Text>
+                                <Text style={styles.confettiText}>Order is Ready!</Text>
+                            </View>
+                        )}
+
+                        <View style={{ height: 40 }} />
+                    </ScrollView>
+                </>
+            )}
 
             {/* Approval Modal */}
             <Modal visible={showApprovalModal} transparent animationType="fade">
