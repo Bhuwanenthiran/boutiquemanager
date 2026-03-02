@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
+import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay, ScreenWrapper } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
 import { formatTimer, now } from '../../services/dateUtils';
 
@@ -142,6 +143,7 @@ const OrderCard = React.memo(({ item, activeTimers, startTimer, stopTimer, cycle
 });
 
 const StitchingProductionScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const productionOrders = useProductionStore((s) => s.productionOrders);
     const tailors = useProductionStore((s) => s.tailors);
     const filterTailor = useProductionStore((s) => s.filterTailor);
@@ -189,7 +191,7 @@ const StitchingProductionScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && productionOrders.length > 0 && !error} message="Updating status..." />
             <ErrorOverlay
                 visible={!!error && productionOrders.length > 0}
@@ -250,7 +252,7 @@ const StitchingProductionScreen = ({ navigation }) => {
                     data={filteredOrders}
                     renderItem={renderOrderCard}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
                     showsVerticalScrollIndicator={false}
                     style={{ flex: 1 }}
                     refreshing={isLoading}
@@ -261,7 +263,7 @@ const StitchingProductionScreen = ({ navigation }) => {
                     removeClippedSubviews={Platform.OS === 'android'}
                 />
             )}
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -272,7 +274,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.sm,
     },
     headerTitle: {
@@ -293,7 +295,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: 100,
+        paddingBottom: 20,
     },
     taskCard: {
         marginBottom: SIZES.md,

@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Alert, Share } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, Alert, Share, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useShootStore } from '../../store/shootStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState, ScreenWrapper } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import * as ImagePicker from 'expo-image-picker';
 
 const ShootScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const orders = useOrderStore((s) => s.orders);
     const shoots = useShootStore((s) => s.shoots);
     const updateShoot = useShootStore((s) => s.updateShoot);
@@ -18,386 +20,239 @@ const ShootScreen = ({ navigation }) => {
     const error = useShootStore((s) => s.error);
     const clearError = useShootStore((s) => s.clearError);
 
-    const [selectedOrder, setSelectedOrder] = useState(orders[0]?.id || null);
-
-    const currentShoot = shoots.find(s => s.orderId === selectedOrder);
-    const order = orders.find(o => o.id === selectedOrder);
+    const onRefresh = async () => {
+        // Shoots are already in store, normally we'd fetch here
+    };
 
     const handlePickImage = async () => {
-        try {
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsMultipleSelection: true,
-                quality: 0.8,
-            });
-            if (!result.canceled && result.assets) {
-                if (!currentShoot) {
-                    await addShoot({
-                        orderId: selectedOrder,
-                        images: result.assets.map(a => a.uri),
-                        productShootDone: false,
-                        instagramUploaded: false,
-                        googleCatalogListed: false,
-                        notes: '',
-                    });
-                } else {
-                    for (const asset of result.assets) {
-                        await addImage(currentShoot.id, asset.uri);
-                    }
-                }
-            }
-        } catch (e) {
-            Alert.alert('Error', 'Could not access photos');
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'We need camera roll permissions to upload product photos.');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 5],
+            quality: 0.8,
+        });
+
+        if (!result.canceled) {
+            // TODO: Upload result.assets[0].uri to Firebase Storage
+            // Image is selected and ready for upload pipeline
         }
     };
 
-    const handleShare = async () => {
+    const handleOpenCamera = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'We need camera permissions to take product photos.');
+            return;
+        }
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [4, 5],
+            quality: 0.8,
+        });
+
+        if (!result.canceled) {
+            // TODO: Upload result.assets[0].uri to Firebase Storage
+            // Photo captured and ready for upload pipeline
+        }
+    };
+
+    const handleShare = async (item) => {
         try {
             await Share.share({
-                message: `Check out this beautiful piece from Atelier Boutique - ${order?.designName || 'Our latest creation'}!`,
+                message: `Check out our latest design: ${item.orderId} - ${item.customerName}`,
+                url: item.mainImage,
             });
-        } catch (e) {
-            // ignore
+        } catch {
+            // Share dismissed or failed silently
         }
     };
-
-    const handleToggleStatus = async (field) => {
-        if (currentShoot) {
-            try {
-                await updateShoot(currentShoot.id, { [field]: !currentShoot[field] });
-            } catch (error) {
-                // Handled in store
-            }
-        }
-    };
-
-    const statusItems = [
-        { key: 'productShootDone', label: 'Product Shoot', icon: 'camera-outline', color: COLORS.primary },
-        { key: 'instagramUploaded', label: 'Instagram Upload', icon: 'logo-instagram', color: '#E1306C' },
-        { key: 'googleCatalogListed', label: 'Google Catalog', icon: 'globe-outline', color: '#4285F4' },
-    ];
 
     return (
-        <View style={styles.container}>
-            <LoadingOverlay visible={isLoading && !error} message="Processing media..." />
+        <ScreenWrapper useSafeTop>
+            <LoadingOverlay visible={isLoading} message="Processing media..." />
             <ErrorOverlay
                 visible={!!error}
                 error={error}
-                onRetry={() => { }} // Retry not easily dynamic
                 onClose={clearError}
             />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Media & Shoot</Text>
-                <Text style={styles.headerSubtitle}>Product photography & social uploads</Text>
+                <Text style={styles.headerSubtitle}>{shoots.length} product shoots recorded</Text>
             </View>
 
-            {orders.length === 0 ? (
+            {shoots.length === 0 ? (
                 <EmptyState
                     icon="camera-outline"
-                    title="No orders for shoot"
-                    subtitle="Orders ready for delivery will appear here for product photography"
+                    title="No product photos yet"
+                    subtitle="Shoots from completed orders will appear here"
                 />
             ) : (
-                <>
-                    {/* Order Selector */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.orderTabs}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        {orders.map(o => (
-                            <TouchableOpacity
-                                key={o.id}
-                                style={[styles.orderTab, selectedOrder === o.id && styles.orderTabActive]}
-                                onPress={() => setSelectedOrder(o.id)}
-                                disabled={isLoading}
-                            >
-                                <Text style={[styles.orderTabId, selectedOrder === o.id && styles.orderTabIdActive]}>{o.id}</Text>
-                                <Text style={[styles.orderTabName, selectedOrder === o.id && styles.orderTabNameActive]} numberOfLines={1}>{o.designName}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-
-                    <ScrollView
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        {/* Image Gallery */}
-                        <Card elevated>
-                            <View style={styles.sectionHead}>
-                                <Ionicons name="images-outline" size={18} color={COLORS.primary} />
-                                <Text style={styles.sectionTitle}>Photo Gallery</Text>
-                            </View>
-
-                            {currentShoot?.images && currentShoot.images.length > 0 ? (
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imageGallery}>
-                                    {currentShoot.images.map((uri, idx) => (
-                                        <View key={idx} style={styles.imageThumb}>
-                                            <Image source={{ uri }} style={styles.thumbImage} />
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+                >
+                    <View style={styles.shootGrid}>
+                        {shoots.map((item) => (
+                            <Card key={item.id} style={styles.shootCard}>
+                                <TouchableOpacity onPress={() => { }}>
+                                    <Image source={{ uri: item.mainImage }} style={styles.shootImage} />
+                                    <View style={styles.shootOverlay}>
+                                        <View style={[styles.statusTag, { backgroundColor: item.status === 'published' ? COLORS.success : COLORS.warning }]}>
+                                            <Text style={styles.statusTagText}>{item.status}</Text>
                                         </View>
-                                    ))}
-                                    <TouchableOpacity style={styles.addImageBtn} onPress={handlePickImage} disabled={isLoading}>
-                                        <Ionicons name="add" size={28} color={COLORS.textMuted} />
-                                    </TouchableOpacity>
-                                </ScrollView>
-                            ) : (
-                                <TouchableOpacity style={styles.uploadArea} onPress={handlePickImage} disabled={isLoading}>
-                                    <View style={styles.uploadIconWrap}>
-                                        <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary} />
-                                    </View>
-                                    <Text style={styles.uploadText}>Upload Product Photos</Text>
-                                    <Text style={styles.uploadHint}>Tap to select from gallery</Text>
-                                </TouchableOpacity>
-                            )}
-                        </Card>
-
-                        {/* Upload Status Tracking */}
-                        <Card elevated>
-                            <View style={styles.sectionHead}>
-                                <Ionicons name="share-social-outline" size={18} color={COLORS.primary} />
-                                <Text style={styles.sectionTitle}>Upload Status</Text>
-                            </View>
-
-                            {statusItems.map((item) => (
-                                <TouchableOpacity
-                                    key={item.key}
-                                    style={styles.statusItem}
-                                    onPress={() => handleToggleStatus(item.key)}
-                                    activeOpacity={0.7}
-                                    disabled={isLoading}
-                                >
-                                    <View style={[styles.statusIcon, { backgroundColor: item.color + '18' }]}>
-                                        <Ionicons name={item.icon} size={20} color={item.color} />
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={styles.statusLabel}>{item.label}</Text>
-                                        <Text style={styles.statusDesc}>
-                                            {currentShoot?.[item.key] ? 'Uploaded ✓' : 'Not uploaded yet'}
-                                        </Text>
-                                    </View>
-                                    <View style={[
-                                        styles.statusToggle,
-                                        currentShoot?.[item.key] && styles.statusToggleActive,
-                                    ]}>
-                                        {currentShoot?.[item.key] ? (
-                                            <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
-                                        ) : (
-                                            <Ionicons name="close" size={14} color={COLORS.textMuted} />
-                                        )}
                                     </View>
                                 </TouchableOpacity>
-                            ))}
-                        </Card>
-
-                        {/* Share Button */}
-                        <Card elevated style={styles.shareCard}>
-                            <View style={styles.shareContent}>
-                                <Ionicons name="paper-plane-outline" size={22} color={COLORS.primary} />
-                                <View style={{ marginLeft: SIZES.md, flex: 1 }}>
-                                    <Text style={styles.shareTitle}>Share This Creation</Text>
-                                    <Text style={styles.shareDesc}>Share on social media or with the customer</Text>
+                                <View style={styles.shootInfo}>
+                                    <View>
+                                        <Text style={styles.shootOrderId}>ORDER {item.orderId}</Text>
+                                        <Text style={styles.shootCustomer}>{item.customerName}</Text>
+                                    </View>
+                                    <View style={styles.shootActions}>
+                                        <TouchableOpacity style={styles.actionIconBtn} onPress={() => handleShare(item)}>
+                                            <Ionicons name="share-social-outline" size={20} color={COLORS.primary} />
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.actionIconBtn}>
+                                            <Ionicons name="cloud-upload-outline" size={20} color={COLORS.primary} />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
-                            </View>
+                            </Card>
+                        ))}
+                    </View>
+
+                    <View style={styles.uploadSection}>
+                        <Card style={styles.uploadCard}>
+                            <Ionicons name="cloud-upload-outline" size={40} color={COLORS.primary} style={{ marginBottom: SIZES.sm }} />
+                            <Text style={styles.uploadTitle}>New Product Shoot</Text>
+                            <Text style={styles.uploadSubtitle}>Capture and upload product photography for social media</Text>
                             <FormButton
-                                title="Share"
-                                icon="share-outline"
-                                onPress={handleShare}
+                                title="Select from Gallery"
+                                icon="images-outline"
+                                onPress={handlePickImage}
                                 variant="outline"
-                                size="small"
-                                disabled={isLoading}
+                            />
+                            <FormButton
+                                title="Open Camera"
+                                icon="camera-outline"
+                                onPress={handleOpenCamera}
+                                style={{ marginTop: SIZES.sm }}
                             />
                         </Card>
-
-                        <View style={{ height: 40 }} />
-                    </ScrollView>
-                </>
+                    </View>
+                </ScrollView>
             )}
-        </View>
+        </ScreenWrapper>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.bg,
-    },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
-        paddingBottom: SIZES.sm,
+        paddingTop: SIZES.lg,
+        paddingBottom: SIZES.md,
     },
     headerTitle: {
         fontSize: SIZES.heading,
-        color: COLORS.textPrimary,
         ...FONTS.bold,
+        color: COLORS.textPrimary,
         letterSpacing: -0.5,
     },
     headerSubtitle: {
         fontSize: SIZES.small,
-        color: COLORS.textMuted,
         ...FONTS.regular,
-        marginTop: 2,
-    },
-    orderTabs: {
-        paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.md,
-    },
-    orderTab: {
-        backgroundColor: COLORS.bgCard,
-        borderRadius: SIZES.radiusMd,
-        paddingHorizontal: SIZES.md,
-        paddingVertical: SIZES.sm,
-        marginRight: SIZES.sm,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        minWidth: 90,
-    },
-    orderTabActive: {
-        backgroundColor: COLORS.primaryMuted,
-        borderColor: COLORS.primary,
-    },
-    orderTabId: {
-        fontSize: SIZES.caption,
         color: COLORS.textMuted,
-        ...FONTS.medium,
-    },
-    orderTabIdActive: { color: COLORS.primary },
-    orderTabName: {
-        fontSize: SIZES.small,
-        color: COLORS.textSecondary,
-        ...FONTS.regular,
         marginTop: 2,
-    },
-    orderTabNameActive: {
-        color: COLORS.primary,
-        ...FONTS.medium,
     },
     scrollContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.xxxl,
     },
-    sectionHead: {
+    shootGrid: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SIZES.md,
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
-    sectionTitle: {
-        fontSize: SIZES.bodyLg,
-        color: COLORS.textPrimary,
-        ...FONTS.semiBold,
-        marginLeft: SIZES.sm,
-    },
-    imageGallery: {
-        paddingVertical: SIZES.sm,
-    },
-    imageThumb: {
-        width: 100,
-        height: 100,
-        borderRadius: SIZES.radiusMd,
+    shootCard: {
+        width: '48%',
+        padding: 0,
         overflow: 'hidden',
-        marginRight: SIZES.sm,
-        backgroundColor: COLORS.bgElevated,
+        marginBottom: SIZES.md,
     },
-    thumbImage: {
+    shootImage: {
         width: '100%',
-        height: '100%',
-    },
-    addImageBtn: {
-        width: 100,
-        height: 100,
-        borderRadius: SIZES.radiusMd,
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-        borderStyle: 'dashed',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    uploadArea: {
-        borderWidth: 1.5,
-        borderColor: COLORS.border,
-        borderStyle: 'dashed',
-        borderRadius: SIZES.radiusMd,
-        padding: SIZES.xxl,
-        alignItems: 'center',
+        height: 200,
         backgroundColor: COLORS.bgElevated,
     },
-    uploadIconWrap: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: COLORS.primaryMuted,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: SIZES.md,
+    shootOverlay: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
     },
-    uploadText: {
-        fontSize: SIZES.bodyLg,
-        color: COLORS.textSecondary,
-        ...FONTS.semiBold,
+    statusTag: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: SIZES.radiusSm,
     },
-    uploadHint: {
-        fontSize: SIZES.small,
-        color: COLORS.textMuted,
-        ...FONTS.regular,
-        marginTop: 4,
+    statusTagText: {
+        fontSize: 10,
+        ...FONTS.bold,
+        color: COLORS.textOnPrimary,
+        textTransform: 'uppercase',
     },
-    statusItem: {
+    shootInfo: {
+        padding: SIZES.sm,
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: SIZES.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.borderLight,
     },
-    statusIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: SIZES.radiusMd,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: SIZES.md,
-    },
-    statusLabel: {
-        fontSize: SIZES.body,
-        color: COLORS.textPrimary,
+    shootOrderId: {
+        fontSize: 10,
         ...FONTS.medium,
-    },
-    statusDesc: {
-        fontSize: SIZES.caption,
         color: COLORS.textMuted,
-        ...FONTS.regular,
-        marginTop: 1,
     },
-    statusToggle: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: COLORS.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    statusToggleActive: {
-        backgroundColor: COLORS.success,
-    },
-    shareCard: {
-        marginTop: SIZES.sm,
-    },
-    shareContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: SIZES.md,
-    },
-    shareTitle: {
-        fontSize: SIZES.bodyLg,
-        color: COLORS.textPrimary,
+    shootCustomer: {
+        fontSize: SIZES.small,
         ...FONTS.semiBold,
-    },
-    shareDesc: {
-        fontSize: SIZES.caption,
-        color: COLORS.textMuted,
-        ...FONTS.regular,
+        color: COLORS.textPrimary,
         marginTop: 2,
+    },
+    shootActions: {
+        flexDirection: 'row',
+    },
+    actionIconBtn: {
+        marginLeft: 8,
+        padding: 4,
+    },
+    uploadSection: {
+        marginTop: SIZES.xl,
+        marginBottom: SIZES.xxxl,
+    },
+    uploadCard: {
+        alignItems: 'center',
+        padding: SIZES.xl,
+        borderStyle: 'dashed',
+        borderWidth: 2,
+        borderColor: COLORS.primarySoft,
+    },
+    uploadTitle: {
+        fontSize: SIZES.subtitle,
+        ...FONTS.bold,
+        color: COLORS.textPrimary,
+    },
+    uploadSubtitle: {
+        fontSize: SIZES.small,
+        ...FONTS.regular,
+        color: COLORS.textMuted,
+        textAlign: 'center',
+        marginTop: 4,
+        marginBottom: SIZES.xl,
     },
 });
 

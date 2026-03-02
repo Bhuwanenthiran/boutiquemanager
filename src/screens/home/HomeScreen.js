@@ -1,12 +1,13 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
 import { useProductionStore } from '../../store/productionStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, StatusBadge, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
+import { Card, StatusBadge, LoadingOverlay, ErrorCard, ErrorOverlay, ScreenWrapper } from '../../components/common';
 
 const { width } = Dimensions.get('window');
 
@@ -35,6 +36,7 @@ const RecentOrderCard = React.memo(({ order, navigation, colors }) => (
 const HomeScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
+    const insets = useSafeAreaInsets();
     const orders = useOrderStore((s) => s.orders);
     const fetchOrders = useOrderStore((s) => s.fetchOrders);
     const isLoading = useOrderStore((s) => s.isLoading);
@@ -51,7 +53,7 @@ const HomeScreen = ({ navigation }) => {
                 initProduction()
             ]);
         } catch (error) {
-            console.error('Refresh failed:', error);
+            // Error managed by stores
         }
     }, [fetchOrders, initProduction]);
 
@@ -74,7 +76,7 @@ const HomeScreen = ({ navigation }) => {
     ], [C]);
 
     return (
-        <View style={[styles.container, { backgroundColor: C.bg }]}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && orders.length === 0 && !error} message="Loading dashboard..." />
             <ErrorOverlay
                 visible={!!error && orders.length > 0}
@@ -94,7 +96,7 @@ const HomeScreen = ({ navigation }) => {
             ) : (
                 <ScrollView
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.scrollContent}
+                    contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
                     refreshControl={
                         <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />
                     }
@@ -222,10 +224,10 @@ const HomeScreen = ({ navigation }) => {
                         />
                     ))}
 
-                    <View style={{ height: 100 }} />
+                    <View style={{ height: 20 }} />
                 </ScrollView>
             )}
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -242,7 +244,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.base,
     },
     greeting: {

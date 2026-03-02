@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Platform, Modal, ScrollView, Keyboard, Animated } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Switch, Platform, Modal, ScrollView, Keyboard, Animated, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
@@ -12,7 +13,7 @@ try {
     Haptics = null;
 }
 
-export const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, error, icon, required, editable = true }) => {
+export const FormInput = ({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, error, icon, required, editable = true, secureTextEntry = false, autoCapitalize = 'sentences' }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
 
@@ -42,6 +43,9 @@ export const FormInput = ({ label, value, onChangeText, placeholder, keyboardTyp
                     numberOfLines={multiline ? 4 : 1}
                     textAlignVertical={multiline ? 'top' : 'center'}
                     editable={editable}
+                    secureTextEntry={secureTextEntry}
+                    autoCapitalize={autoCapitalize}
+                    autoCorrect={false}
                 />
             </View>
             {error && <Text style={[styles.errorText, { color: C.error }]}>{error}</Text>}
@@ -106,6 +110,8 @@ export const FormButton = ({ title, onPress, variant = 'primary', icon, disabled
 export const FormSelect = ({ label, value, options, onSelect, icon, required, addNewLabel, onAddNew }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
+    const insets = useSafeAreaInsets();
+    const screenHeight = Dimensions.get('window').height;
 
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
@@ -121,6 +127,8 @@ export const FormSelect = ({ label, value, options, onSelect, icon, required, ad
     const openDropdown = () => {
         Keyboard.dismiss();
         triggerRef.current?.measureInWindow((x, y, width, height) => {
+            // Adjust y for Android status bar if needed, 
+            // but statusBarTranslucent in Modal usually handles this.
             setTriggerLayout({ x, y, width, height });
             setOpen(true);
         });
@@ -172,12 +180,22 @@ export const FormSelect = ({ label, value, options, onSelect, icon, required, ad
                         style={[
                             styles.dropdownContainer,
                             { backgroundColor: C.bgCard, borderColor: C.border },
-                            triggerLayout && {
-                                position: 'absolute',
-                                top: triggerLayout.y + triggerLayout.height + 6,
-                                left: triggerLayout.x,
-                                width: triggerLayout.width,
-                            },
+                            triggerLayout && (() => {
+                                const dropdownMaxHeight = 280; // Estimated max height
+                                const spaceBelow = screenHeight - (triggerLayout.y + triggerLayout.height) - insets.bottom - 20;
+                                const showAbove = spaceBelow < dropdownMaxHeight;
+
+                                return {
+                                    position: 'absolute',
+                                    left: triggerLayout.x,
+                                    width: triggerLayout.width,
+                                    ...(showAbove ? {
+                                        bottom: screenHeight - triggerLayout.y + 6,
+                                    } : {
+                                        top: triggerLayout.y + triggerLayout.height + 6,
+                                    })
+                                };
+                            })(),
                         ]}
                     >
                         {isSearchable && (
@@ -476,11 +494,16 @@ const styles = StyleSheet.create({
         borderWidth: 0.5,
         borderColor: COLORS.border,
         overflow: 'hidden',
-        shadowColor: COLORS.shadowColor,
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.1,
-        shadowRadius: 28,
-        elevation: 12,
+        ...Platform.select({
+            web: { boxShadow: `0px 12px 28px rgba(45, 35, 25, 0.1)` },
+            default: {
+                shadowColor: COLORS.shadowColor,
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.1,
+                shadowRadius: 28,
+                elevation: 12,
+            }
+        }),
     },
     dropdownSearch: {
         flexDirection: 'row',

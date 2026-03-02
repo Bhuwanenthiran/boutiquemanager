@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../theme';
 import { useThemeStore } from '../store/themeStore';
+import { ScreenWrapper } from '../components/common';
 
 // Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -52,7 +53,7 @@ const AdminTabs = () => {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
-                tabBarIcon: ({ focused, size }) => {
+                tabBarIcon: ({ focused }) => {
                     const icons = TAB_ICONS[route.name];
                     return (
                         <View style={focused ? [styles.activeTabIcon, { backgroundColor: C.primaryMuted }] : null}>
@@ -92,7 +93,6 @@ const AdminTabs = () => {
     );
 };
 
-// Staff Tab Navigator (Limited Views: Orders & Production only)
 const StaffTabs = () => {
     const insets = useSafeAreaInsets();
     const isDark = useThemeStore(s => s.isDark);
@@ -146,9 +146,8 @@ const MoreNavigator = () => (
     </MoreStack.Navigator>
 );
 
-// More Menu Screen
-
 const MoreMenuScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const { isDark, toggleTheme } = useThemeStore();
     const logout = useAuthStore((s) => s.logout);
     const C = getColors(isDark);
@@ -182,76 +181,108 @@ const MoreMenuScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={[styles.moreContainer, { backgroundColor: C.bg }]}>
-            <View style={[styles.moreHeader, { borderBottomColor: C.borderLight }]}>
-                <Text style={[styles.moreTitle, { color: C.textPrimary }]}>More</Text>
-                <Text style={[styles.moreSubtitle, { color: C.textMuted }]}>Additional modules</Text>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.moreContent}>
-                {menuItems.map((item, idx) => (
-                    <TouchableOpacity
-                        key={idx}
-                        style={[styles.menuCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
-                        onPress={() => navigation.navigate(item.screen)}
-                        activeOpacity={0.7}
-                    >
-                        <View style={[styles.menuIcon, { backgroundColor: item.color + '22' }]}>
-                            <Ionicons name={item.icon} size={24} color={item.color} />
+        <ScreenWrapper useSafeTop>
+            <View style={[styles.moreContainer, { backgroundColor: C.bg }]}>
+                <View style={[styles.moreHeader, { borderBottomColor: C.borderLight }]}>
+                    <Text style={[styles.moreTitle, { color: C.textPrimary }]}>More</Text>
+                    <Text style={[styles.moreSubtitle, { color: C.textMuted }]}>Additional modules</Text>
+                </View>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={[styles.moreContent, { paddingBottom: 20 + insets.bottom }]}
+                >
+                    {menuItems.map((item, idx) => (
+                        <TouchableOpacity
+                            key={idx}
+                            style={[styles.menuCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
+                            onPress={() => navigation.navigate(item.screen)}
+                            activeOpacity={0.7}
+                        >
+                            <View style={[styles.menuIcon, { backgroundColor: item.color + '22' }]}>
+                                <Ionicons name={item.icon} size={24} color={item.color} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.menuLabel, { color: C.textPrimary }]}>{item.label}</Text>
+                                <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>{item.subtitle}</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+                        </TouchableOpacity>
+                    ))}
+
+                    <View style={[styles.settingsCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}>
+                        <View style={[styles.settingsIcon, { backgroundColor: isDark ? C.primarySoft : C.primaryMuted }]}>
+                            <Ionicons
+                                name={isDark ? 'moon' : 'sunny-outline'}
+                                size={22}
+                                color={C.primary}
+                            />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.menuLabel, { color: C.textPrimary }]}>{item.label}</Text>
-                            <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>{item.subtitle}</Text>
+                            <Text style={[styles.menuLabel, { color: C.textPrimary }]}>Dark Mode</Text>
+                            <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>
+                                {isDark ? 'Dark theme active' : 'Light theme active'}
+                            </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
-                    </TouchableOpacity>
-                ))}
-
-                {/* ── Dark Mode Toggle ── */}
-                <View style={[styles.settingsCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}>
-                    <View style={[styles.settingsIcon, { backgroundColor: isDark ? C.primarySoft : C.primaryMuted }]}>
-                        <Ionicons
-                            name={isDark ? 'moon' : 'sunny-outline'}
-                            size={22}
-                            color={C.primary}
+                        <Switch
+                            value={isDark}
+                            onValueChange={toggleTheme}
+                            trackColor={{ false: C.borderLight, true: C.primary + '60' }}
+                            thumbColor={isDark ? C.primary : C.bgCard}
                         />
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={[styles.menuLabel, { color: C.textPrimary }]}>Dark Mode</Text>
-                        <Text style={[styles.menuSubtitle, { color: C.textMuted }]}>
-                            {isDark ? 'Dark theme active' : 'Light theme active'}
-                        </Text>
-                    </View>
-                    <Switch
-                        value={isDark}
-                        onValueChange={toggleTheme}
-                        trackColor={{ false: C.borderLight, true: C.primary + '60' }}
-                        thumbColor={isDark ? C.primary : C.bgCard}
-                    />
-                </View>
 
-                {/* ── Log Out Button ── */}
-                <TouchableOpacity
-                    style={[styles.logoutCard, { backgroundColor: C.errorLight, borderColor: C.error + '40' }]}
-                    onPress={handleLogout}
-                    activeOpacity={0.75}
-                >
-                    <View style={[styles.settingsIcon, { backgroundColor: C.error + '22' }]}>
-                        <Ionicons name="log-out-outline" size={22} color={C.error} />
-                    </View>
-                    <Text style={[styles.menuLabel, { color: C.error, flex: 1 }]}>Log Out</Text>
-                    <Ionicons name="chevron-forward" size={18} color={C.error + '80'} />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.logoutCard, { backgroundColor: C.errorLight, borderColor: C.error + '40' }]}
+                        onPress={handleLogout}
+                        activeOpacity={0.75}
+                    >
+                        <View style={[styles.settingsIcon, { backgroundColor: C.error + '22' }]}>
+                            <Ionicons name="log-out-outline" size={22} color={C.error} />
+                        </View>
+                        <Text style={[styles.menuLabel, { color: C.error, flex: 1 }]}>Log Out</Text>
+                        <Ionicons name="chevron-forward" size={18} color={C.error + '80'} />
+                    </TouchableOpacity>
 
-                {/* App Info */}
-                <View style={styles.appInfo}>
-                    <View style={[styles.appLogoWrap, { backgroundColor: C.primaryMuted }]}>
-                        <Ionicons name="diamond-outline" size={28} color={C.primary} />
+                    <View style={styles.appInfo}>
+                        <View style={[styles.appLogoWrap, { backgroundColor: C.primaryMuted }]}>
+                            <Ionicons name="diamond-outline" size={28} color={C.primary} />
+                        </View>
+                        <Text style={[styles.appName, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                        <Text style={[styles.appVersion, { color: C.textMuted }]}>Version 1.0.0</Text>
+                        <Text style={[styles.appTagline, { color: C.textMuted }]}>Crafted with care for tailoring excellence</Text>
                     </View>
-                    <Text style={[styles.appName, { color: C.textPrimary }]}>Atelier Boutique</Text>
-                    <Text style={[styles.appVersion, { color: C.textMuted }]}>Version 1.0.0</Text>
-                    <Text style={[styles.appTagline, { color: C.textMuted }]}>Crafted with care for tailoring excellence</Text>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </View>
+        </ScreenWrapper>
+    );
+};
+
+const AuthLoadingScreen = () => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{
+                width: 88,
+                height: 88,
+                borderRadius: 44,
+                backgroundColor: C.primaryMuted,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginBottom: SIZES.xl,
+            }}>
+                <Ionicons name="diamond-outline" size={44} color={C.primary} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+                {[0, 1, 2].map((i) => (
+                    <View key={i} style={{
+                        width: 6, height: 6, borderRadius: 3,
+                        backgroundColor: C.primary,
+                        opacity: 0.4 + i * 0.3,
+                    }} />
+                ))}
+            </View>
         </View>
     );
 };
@@ -259,15 +290,28 @@ const MoreMenuScreen = ({ navigation }) => {
 const AppNavigator = () => {
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
     const role = useAuthStore((s) => s.role);
+    const isInitializing = useAuthStore((s) => s.isInitializing);
+    const initSession = useAuthStore((s) => s.initSession);
+
+    React.useEffect(() => {
+        initSession();
+    }, []);
+
+    // Show branded loading screen while checking persisted session.
+    // Prevents the Login screen from flashing before auth state is resolved.
+    if (isInitializing) {
+        return <AuthLoadingScreen />;
+    }
+
+    // Role guard: require both isAuthenticated AND a valid known role
+    const isFullyAuthed = isAuthenticated && (role === 'admin' || role === 'staff');
 
     return (
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-                {!isAuthenticated ? (
-                    // Auth Stack
+                {!isFullyAuthed ? (
                     <Stack.Screen name="Login" component={LoginScreen} />
                 ) : (
-                    // App Stack
                     <>
                         <Stack.Screen
                             name="MainTabs"
@@ -311,13 +355,12 @@ const styles = StyleSheet.create({
         padding: 6,
         marginBottom: -4,
     },
-    // More Menu
     moreContainer: {
         flex: 1,
     },
     moreHeader: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.md,
         borderBottomWidth: 1,
         marginBottom: SIZES.sm,
@@ -334,7 +377,6 @@ const styles = StyleSheet.create({
     },
     moreContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.xxxl,
         paddingTop: SIZES.sm,
     },
     menuCard: {

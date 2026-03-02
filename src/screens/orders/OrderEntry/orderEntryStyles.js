@@ -13,7 +13,7 @@ export default StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.sm,
+        paddingTop: SIZES.sm,
         paddingBottom: SIZES.md,
     },
     backBtn: {

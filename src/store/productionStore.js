@@ -35,7 +35,7 @@ export const useProductionStore = create((set, get) => ({
             set({ productionOrders, productionStages, tailors, isLoading: false });
         } catch (error) {
             set({ isLoading: false, error: 'Failed to initialize production pipeline.' });
-            console.error('Failed to initialize production store:', error);
+            // Error handled in UI
         }
     },
 
@@ -62,7 +62,7 @@ export const useProductionStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update production status.' });
-            console.error('Update production status failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -86,7 +86,7 @@ export const useProductionStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update production stage.' });
-            console.error('Update stage failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -115,7 +115,7 @@ export const useProductionStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Could not start stage. Check your connection.' });
-            console.error('Start stage failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -140,7 +140,7 @@ export const useProductionStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to complete stage. Please try again.' });
-            console.error('Complete stage failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -163,7 +163,7 @@ export const useProductionStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Could not assign tailor.' });
-            console.error('Assign tailor failed:', error);
+            // Error handled in UI
             throw error;
         }
     },

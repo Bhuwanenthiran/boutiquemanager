@@ -41,7 +41,7 @@ export const useOrderStore = create((set, get) => ({
                 ? 'Check your internet connection and try again.'
                 : 'Failed to load order data. Please try again.';
             set({ isLoading: false, error: message });
-            console.error('Failed to initialize order store:', error);
+            // Error handled in UI
         }
     },
 
@@ -53,7 +53,7 @@ export const useOrderStore = create((set, get) => ({
             set({ orders, isLoading: false });
         } catch (error) {
             set({ isLoading: false, error: 'Could not sync with server. Please try again.' });
-            console.error('Failed to fetch orders:', error);
+            // Error handled in UI
         }
     },
 
@@ -107,7 +107,7 @@ export const useOrderStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Update failed. Check your connection.' });
-            console.error('Update failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -122,7 +122,7 @@ export const useOrderStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Could not delete order. Try again later.' });
-            console.error('Delete failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -140,7 +140,7 @@ export const useOrderStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Status update failed.' });
-            console.error('Update status failed:', error);
+            // Error handled in UI
             throw error;
         }
     },

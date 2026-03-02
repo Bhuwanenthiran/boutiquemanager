@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Platform, KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../../theme';
+import { COLORS, SIZES, FONTS, getColors } from '../../../theme';
 import { useThemeStore } from '../../../store/themeStore';
 import { useOrderStore } from '../../../store/orderStore';
 import { FormButton } from '../../../components/forms';
-import { LoadingOverlay, LoadingSkeleton, ErrorOverlay } from '../../../components/common';
+import { LoadingOverlay, ErrorOverlay, ScreenWrapper } from '../../../components/common';
 
 // Sub-components
 import StepCustomer from './StepCustomer';
@@ -175,96 +175,98 @@ const OrderEntryContainer = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: C.bg }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <LoadingOverlay visible={isLoading && !error} message="Creating order..." />
-            <ErrorOverlay
-                visible={!!error}
-                error={error}
-                onRetry={handleSubmit}
-                onClose={clearError}
-            />
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
-                    <Ionicons name="arrow-back" size={22} color={C.textPrimary} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: C.textPrimary }]}>New Order</Text>
-                <TouchableOpacity onPress={handleSaveDraft} style={styles.draftBtn} disabled={isLoading}>
-                    <Ionicons name="bookmark-outline" size={18} color={C.primary} />
-                    <Text style={[styles.draftText, { color: C.primary }]}>Draft</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Progress Indicator */}
-            <AnimatedProgressBar progress={step} totalSteps={STEPS.length} />
-
-            <View style={styles.progressContainer}>
-                {STEPS.map((s, idx) => (
-                    <View key={idx} style={styles.progressStep}>
-                        <View style={[
-                            styles.progressDot,
-                            { backgroundColor: C.bgElevated, borderColor: C.border },
-                            idx < step && [styles.progressDotCompleted, { backgroundColor: C.success, borderColor: C.success }],
-                            idx === step && [styles.progressDotActive, { backgroundColor: C.primary, borderColor: C.primary }],
-                        ]}>
-                            {idx < step ? (
-                                <Ionicons name="checkmark" size={12} color={C.textOnPrimary} />
-                            ) : (
-                                <Text style={[styles.progressNum, { color: C.textMuted }, idx === step && { color: C.textOnPrimary }]}>{idx + 1}</Text>
-                            )}
-                        </View>
-                        <Text style={[styles.progressLabel, { color: C.textMuted }, idx === step && [styles.progressLabelActive, { color: C.primary }]]}>{s}</Text>
-                    </View>
-                ))}
-            </View>
-
-            {/* Step Content */}
-            <ScrollView
-                style={styles.content}
-                contentContainerStyle={styles.contentInner}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+        <ScreenWrapper useSafeTop>
+            <KeyboardAvoidingView
+                style={[styles.container, { backgroundColor: C.bg }]}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                <Text style={styles.stepTitle}>{STEPS[step]}</Text>
-                {renderStepContent()}
-                <View style={{ height: 100 }} />
-            </ScrollView>
+                <LoadingOverlay visible={isLoading && !error} message="Creating order..." />
+                <ErrorOverlay
+                    visible={!!error}
+                    error={error}
+                    onRetry={handleSubmit}
+                    onClose={clearError}
+                />
+                {/* Header */}
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
+                        <Ionicons name="arrow-back" size={22} color={C.textPrimary} />
+                    </TouchableOpacity>
+                    <Text style={[styles.headerTitle, { color: C.textPrimary }]}>New Order</Text>
+                    <TouchableOpacity onPress={handleSaveDraft} style={styles.draftBtn} disabled={isLoading}>
+                        <Ionicons name="bookmark-outline" size={18} color={C.primary} />
+                        <Text style={[styles.draftText, { color: C.primary }]}>Draft</Text>
+                    </TouchableOpacity>
+                </View>
 
-            {/* Bottom Bar */}
-            <View style={[styles.bottomBar, { backgroundColor: C.bgCard, borderTopColor: C.borderLight, paddingBottom: insets.bottom > 0 ? insets.bottom : SIZES.md }]}>
-                {step > 0 && (
-                    <FormButton
-                        title="Back"
-                        variant="outline"
-                        icon="arrow-back-outline"
-                        onPress={() => setStep(step - 1)}
-                        size="medium"
-                        disabled={isLoading}
-                    />
-                )}
-                <View style={{ flex: 1, marginLeft: step > 0 ? SIZES.sm : 0 }}>
-                    {step < STEPS.length - 1 ? (
+                {/* Progress Indicator */}
+                <AnimatedProgressBar progress={step} totalSteps={STEPS.length} />
+
+                <View style={styles.progressContainer}>
+                    {STEPS.map((s, idx) => (
+                        <View key={idx} style={styles.progressStep}>
+                            <View style={[
+                                styles.progressDot,
+                                { backgroundColor: C.bgElevated, borderColor: C.border },
+                                idx < step && [styles.progressDotCompleted, { backgroundColor: C.success, borderColor: C.success }],
+                                idx === step && [styles.progressDotActive, { backgroundColor: C.primary, borderColor: C.primary }],
+                            ]}>
+                                {idx < step ? (
+                                    <Ionicons name="checkmark" size={12} color={C.textOnPrimary} />
+                                ) : (
+                                    <Text style={[styles.progressNum, { color: C.textMuted }, idx === step && { color: C.textOnPrimary }]}>{idx + 1}</Text>
+                                )}
+                            </View>
+                            <Text style={[styles.progressLabel, { color: C.textMuted }, idx === step && [styles.progressLabelActive, { color: C.primary }]]}>{s}</Text>
+                        </View>
+                    ))}
+                </View>
+
+                {/* Step Content */}
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={styles.contentInner}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <Text style={styles.stepTitle}>{STEPS[step]}</Text>
+                    {renderStepContent()}
+                    <View style={{ height: 100 }} />
+                </ScrollView>
+
+                {/* Bottom Bar */}
+                <View style={[styles.bottomBar, { backgroundColor: C.bgCard, borderTopColor: C.borderLight, paddingBottom: insets.bottom > 0 ? insets.bottom : SIZES.md }]}>
+                    {step > 0 && (
                         <FormButton
-                            title="Continue"
-                            icon="arrow-forward-outline"
-                            onPress={() => setStep(step + 1)}
-                            disabled={!canProceed()}
-                        />
-                    ) : (
-                        <FormButton
-                            title="Create Order"
-                            icon="checkmark-circle-outline"
-                            onPress={handleSubmit}
-                            disabled={!canProceed()}
-                            loading={isLoading}
+                            title="Back"
+                            variant="outline"
+                            icon="arrow-back-outline"
+                            onPress={() => setStep(step - 1)}
+                            size="medium"
+                            disabled={isLoading}
                         />
                     )}
+                    <View style={{ flex: 1, marginLeft: step > 0 ? SIZES.sm : 0 }}>
+                        {step < STEPS.length - 1 ? (
+                            <FormButton
+                                title="Continue"
+                                icon="arrow-forward-outline"
+                                onPress={() => setStep(step + 1)}
+                                disabled={!canProceed()}
+                            />
+                        ) : (
+                            <FormButton
+                                title="Create Order"
+                                icon="checkmark-circle-outline"
+                                onPress={handleSubmit}
+                                disabled={!canProceed()}
+                                loading={isLoading}
+                            />
+                        )}
+                    </View>
                 </View>
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </ScreenWrapper>
     );
 };
 

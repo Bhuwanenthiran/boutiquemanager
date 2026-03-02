@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
+import { COLORS, SIZES, FONTS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, StatusBadge, FloatingButton, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
+import { Card, StatusBadge, FloatingButton, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay, ScreenWrapper } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -66,6 +67,7 @@ const OrderListItem = React.memo(({ item, navigation, colors, onPriorityColor })
 const OrderListScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
+    const insets = useSafeAreaInsets();
     const orders = useOrderStore((s) => s.orders);
     const filterStatus = useOrderStore((s) => s.filterStatus);
     const searchQuery = useOrderStore((s) => s.searchQuery);
@@ -102,7 +104,7 @@ const OrderListScreen = ({ navigation }) => {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: C.bg }]}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && orders.length > 0 && !error} message="Updating orders..." />
             <ErrorOverlay
                 visible={!!error && orders.length > 0}
@@ -169,7 +171,7 @@ const OrderListScreen = ({ navigation }) => {
                     data={filteredOrders}
                     renderItem={renderOrder}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
                     showsVerticalScrollIndicator={false}
                     style={{ flex: 1 }}
                     refreshing={isLoading}
@@ -186,7 +188,7 @@ const OrderListScreen = ({ navigation }) => {
                 onPress={() => navigation.navigate('OrderEntry')}
                 disabled={isLoading}
             />
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.sm,
     },
     headerTitle: {
@@ -218,7 +220,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: 100,
+        paddingBottom: 20,
     },
     cardHeader: {
         flexDirection: 'row',

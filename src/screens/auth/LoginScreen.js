@@ -1,125 +1,134 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { FormInput, FormButton } from '../../components/forms';
 import { useAuthStore } from '../../store/authStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ErrorOverlay } from '../../components/common';
+import { ErrorOverlay, ScreenWrapper } from '../../components/common';
 
 const LoginScreen = () => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
     const insets = useSafeAreaInsets();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [fieldError, setFieldError] = React.useState(null);
     const login = useAuthStore((s) => s.login);
     const isLoading = useAuthStore((s) => s.isLoading);
     const error = useAuthStore((s) => s.error);
     const clearError = useAuthStore((s) => s.clearError);
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please enter both email and password');
+        if (isLoading) return;
+        setFieldError(null);
+
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedEmail || !trimmedPassword) {
+            setFieldError('Please enter both email and password.');
             return;
         }
 
         try {
-            await login(email, password);
-        } catch (error) {
-            // Handled via store state
+            await login(trimmedEmail, trimmedPassword);
+        } catch {
+            // Error is displayed via the store's ErrorOverlay
         }
     };
 
     return (
-        <KeyboardAvoidingView
-            style={[styles.container, { paddingTop: insets.top, backgroundColor: C.bg }]}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ErrorOverlay
-                visible={!!error}
-                error={error}
-                onRetry={handleLogin}
-                onClose={clearError}
-            />
-            <View style={styles.content}>
-                {/* Logo & Branding */}
-                <View style={styles.header}>
-                    <View style={[styles.logoWrap, { backgroundColor: C.primaryMuted }]}>
-                        <Ionicons name="diamond-outline" size={48} color={C.primary} />
-                    </View>
-                    <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
-                    <Text style={[styles.subtitle, { color: C.textMuted }]}>Management System</Text>
-                </View>
-
-                {/* Login Form */}
-                <View style={styles.form}>
-                    <FormInput
-                        label="Email Address"
-                        value={email}
-                        onChangeText={setEmail}
-                        placeholder="admin@atelier.com"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        icon="mail-outline"
-                        editable={!isLoading}
-                    />
-                    <FormInput
-                        label="Password"
-                        value={password}
-                        onChangeText={setPassword}
-                        placeholder="••••••••"
-                        secureTextEntry
-                        icon="lock-closed-outline"
-                        editable={!isLoading}
-                    />
-
-                    <TouchableOpacity style={styles.forgotPass} disabled={isLoading}>
-                        <Text style={[styles.forgotPassText, { color: C.primary }]}>Forgot Password?</Text>
-                    </TouchableOpacity>
-
-                    <FormButton
-                        title="Sign In"
-                        onPress={handleLogin}
-                        loading={isLoading}
-                        style={styles.loginBtn}
-                    />
-
-                    <View style={styles.dividerWrap}>
-                        <View style={[styles.divider, { backgroundColor: C.border }]} />
-                        <Text style={[styles.dividerText, { color: C.textMuted }]}>OR</Text>
-                        <View style={[styles.divider, { backgroundColor: C.border }]} />
+        <ScreenWrapper useSafeTop>
+            <KeyboardAvoidingView
+                style={[styles.container, { backgroundColor: C.bg }]}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+                <ErrorOverlay
+                    visible={!!(error || fieldError)}
+                    error={error || fieldError}
+                    onRetry={error ? handleLogin : null}
+                    onClose={() => { clearError(); setFieldError(null); }}
+                />
+                <View style={styles.content}>
+                    {/* Logo & Branding */}
+                    <View style={styles.header}>
+                        <View style={[styles.logoWrap, { backgroundColor: C.primaryMuted }]}>
+                            <Ionicons name="diamond-outline" size={48} color={C.primary} />
+                        </View>
+                        <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                        <Text style={[styles.subtitle, { color: C.textMuted }]}>Management System</Text>
                     </View>
 
-                    <View style={styles.demoLoginWrap}>
-                        <Text style={[styles.demoText, { color: C.textMuted }]}>Testing Credentials:</Text>
-                        <View style={styles.demoRow}>
-                            <TouchableOpacity
-                                style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
-                                onPress={() => { setEmail('admin@atelier.com'); setPassword('admin123'); }}
-                                disabled={isLoading}
-                            >
-                                <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Admin Login</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
-                                onPress={() => { setEmail('staff@atelier.com'); setPassword('staff123'); }}
-                                disabled={isLoading}
-                            >
-                                <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Staff Login</Text>
-                            </TouchableOpacity>
+                    {/* Login Form */}
+                    <View style={styles.form}>
+                        <FormInput
+                            label="Email Address"
+                            value={email}
+                            onChangeText={(v) => { setEmail(v); setFieldError(null); }}
+                            placeholder="admin@atelier.com"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            icon="mail-outline"
+                            editable={!isLoading}
+                        />
+                        <FormInput
+                            label="Password"
+                            value={password}
+                            onChangeText={(v) => { setPassword(v); setFieldError(null); }}
+                            placeholder="••••••••"
+                            secureTextEntry
+                            icon="lock-closed-outline"
+                            editable={!isLoading}
+                        />
+
+                        <TouchableOpacity style={styles.forgotPass} disabled={isLoading}>
+                            <Text style={[styles.forgotPassText, { color: C.primary }]}>Forgot Password?</Text>
+                        </TouchableOpacity>
+
+                        <FormButton
+                            title="Sign In"
+                            onPress={handleLogin}
+                            loading={isLoading}
+                            style={styles.loginBtn}
+                        />
+
+                        <View style={styles.dividerWrap}>
+                            <View style={[styles.divider, { backgroundColor: C.border }]} />
+                            <Text style={[styles.dividerText, { color: C.textMuted }]}>OR</Text>
+                            <View style={[styles.divider, { backgroundColor: C.border }]} />
+                        </View>
+
+                        <View style={styles.demoLoginWrap}>
+                            <Text style={[styles.demoText, { color: C.textMuted }]}>Testing Credentials:</Text>
+                            <View style={styles.demoRow}>
+                                <TouchableOpacity
+                                    style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
+                                    onPress={() => { setEmail('admin@atelier.com'); setPassword('admin123'); setFieldError(null); clearError(); }}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Admin Login</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
+                                    onPress={() => { setEmail('staff@atelier.com'); setPassword('staff123'); setFieldError(null); clearError(); }}
+                                    disabled={isLoading}
+                                >
+                                    <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Staff Login</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                </View>
 
-                {/* Footer */}
-                <View style={styles.footer}>
-                    <Text style={[styles.footerText, { color: C.textMuted }]}>Secure Login Powered by</Text>
-                    <Text style={[styles.footerBrand, { color: C.textSecondary }]}>Studio Excellence</Text>
+                    {/* Footer */}
+                    <View style={[styles.footer, { bottom: 20 + insets.bottom }]}>
+                        <Text style={[styles.footerText, { color: C.textMuted }]}>Secure Login Powered by</Text>
+                        <Text style={[styles.footerBrand, { color: C.textSecondary }]}>Studio Excellence</Text>
+                    </View>
                 </View>
-            </View>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </ScreenWrapper>
     );
 };
 

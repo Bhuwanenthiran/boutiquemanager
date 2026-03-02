@@ -104,7 +104,7 @@ export const FloatingButton = ({ onPress, icon = 'add', label }) => {
     );
 };
 
-export const ScreenWrapper = ({ children, style, useSafeBottom = true }) => {
+export const ScreenWrapper = ({ children, style, useSafeBottom = true, useSafeTop = true }) => {
     const insets = useSafeAreaInsets();
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
@@ -112,6 +112,7 @@ export const ScreenWrapper = ({ children, style, useSafeBottom = true }) => {
     return (
         <View style={[
             { flex: 1, backgroundColor: C.bg },
+            useSafeTop && { paddingTop: insets.top },
             useSafeBottom && { paddingBottom: insets.bottom },
             style
         ]}>

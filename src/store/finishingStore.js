@@ -36,7 +36,7 @@ export const useFinishingStore = create((set, get) => ({
             set({ finishingRecords, isLoading: false });
         } catch (error) {
             set({ isLoading: false, error: 'Failed to load quality check data.' });
-            console.error('Failed to initialize finishing store:', error);
+            // Error handled in UI
         }
     },
 
@@ -66,7 +66,7 @@ export const useFinishingStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update quality check status.' });
-            console.error('Toggle checklist failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -90,7 +90,7 @@ export const useFinishingStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to grant quality approval.' });
-            console.error('Mark as ready failed:', error);
+            // Error handled in UI
             throw error;
         }
     },

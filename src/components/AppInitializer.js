@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useOrderStore } from '../store/orderStore';
 import { useProductionStore } from '../store/productionStore';
 import { useFinishingStore } from '../store/finishingStore';
@@ -34,8 +34,8 @@ const AppInitializer = ({ children }) => {
             initCatalogue(),
             initStoreManagement(),
             initShoots(),
-        ]).catch((error) => {
-            console.error('App initialization failed:', error);
+        ]).catch(() => {
+            // Error handled in individual stores
         });
     }, []);
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Alert } from 'react-native';
+import { View, Text } from 'react-native';
 import { FormInput, FormSelect } from '../../../components/forms';
 
 const StepCustomer = ({ form, updateForm, handleCustomerSelect, customers, styles }) => {

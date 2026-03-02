@@ -32,7 +32,7 @@ export const useCatalogueStore = create((set, get) => ({
             set({ holdOrders, cancelledOrders, alterations, isLoading: false });
         } catch (error) {
             set({ isLoading: false, error: 'Failed to load catalogue data.' });
-            console.error('Failed to initialize catalogue store:', error);
+            // Error handled in UI
         }
     },
 
@@ -48,7 +48,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to place order on hold.' });
-            console.error('Add hold order failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -63,7 +63,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to remove hold order.' });
-            console.error('Remove hold order failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -78,7 +78,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to restore hold order.' });
-            console.error('Restore hold order failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -93,7 +93,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to process cancellation.' });
-            console.error('Add cancelled order failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -108,7 +108,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to delete cancellation record.' });
-            console.error('Delete cancelled order failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -123,7 +123,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to add alteration record.' });
-            console.error('Add alteration failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -138,7 +138,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update alteration.' });
-            console.error('Update alteration failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -153,7 +153,7 @@ export const useCatalogueStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to delete alteration record.' });
-            console.error('Delete alteration failed:', error);
+            // Error handled in UI
             throw error;
         }
     },

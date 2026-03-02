@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, Modal, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useCatalogueStore } from '../../store/catalogueStore';
-import { Card, EmptyState, StatusBadge, LoadingOverlay, ErrorOverlay } from '../../components/common';
+import { Card, EmptyState, StatusBadge, LoadingOverlay, ErrorOverlay, ScreenWrapper } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -130,6 +131,7 @@ const AlterationItem = React.memo(({ item, onConfirm, isLoading }) => (
 ));
 
 const CatalogueScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const activeTab = useCatalogueStore((s) => s.activeTab);
     const setActiveTab = useCatalogueStore((s) => s.setActiveTab);
     const holdOrders = useCatalogueStore((s) => s.holdOrders);
@@ -197,7 +199,7 @@ const CatalogueScreen = ({ navigation }) => {
     const { data, renderItem, emptyIcon, emptyTitle } = getCurrentData();
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && !error} message="Processing..." />
             <ErrorOverlay
                 visible={!!error}
@@ -232,7 +234,7 @@ const CatalogueScreen = ({ navigation }) => {
                     data={data}
                     renderItem={renderItem}
                     keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
                     showsVerticalScrollIndicator={false}
                     initialNumToRender={8}
                     windowSize={5}
@@ -277,7 +279,7 @@ const CatalogueScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -288,7 +290,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.sm,
     },
     headerTitle: {
@@ -335,7 +337,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: 100,
+        paddingBottom: 20,
     },
     catalogueCard: {
         marginBottom: SIZES.md,

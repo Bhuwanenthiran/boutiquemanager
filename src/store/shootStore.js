@@ -24,7 +24,7 @@ export const useShootStore = create((set, get) => ({
             set({ shoots, isLoading: false });
         } catch (error) {
             set({ isLoading: false, error: 'Failed to load media records.' });
-            console.error('Failed to initialize shoot store:', error);
+            // Error handled in UI
         }
     },
 
@@ -42,7 +42,7 @@ export const useShootStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to create shoot record.' });
-            console.error('Add shoot failed:', error);
+            // Error handled in UI
             throw error;
         }
     },
@@ -57,7 +57,7 @@ export const useShootStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update shoot status.' });
-            console.error('Update shoot failed:', error);
+            // Error handled in UI
             throw error;
         }
     },

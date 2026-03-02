@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Animated, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useFinishingStore } from '../../store/finishingStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState, ScreenWrapper } from '../../components/common';
 import { FormButton, FormInput } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -16,6 +17,7 @@ const CHECKLIST_ITEMS = [
 ];
 
 const FinishingScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const orders = useOrderStore((s) => s.orders);
     const finishingRecords = useFinishingStore((s) => s.finishingRecords);
     const getFinishing = useFinishingStore((s) => s.getFinishing);
@@ -98,12 +100,12 @@ const FinishingScreen = ({ navigation }) => {
     const progressPercent = (completedCount / CHECKLIST_ITEMS.length) * 100;
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && !error} message="Processing..." />
             <ErrorOverlay
                 visible={!!error}
                 error={error}
-                onRetry={() => { }} // Hard to retry dynamic actions here
+                onRetry={null}
                 onClose={clearError}
             />
             <View style={styles.header}>
@@ -143,7 +145,7 @@ const FinishingScreen = ({ navigation }) => {
 
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.scrollContent}
+                        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Progress Circle */}
@@ -285,7 +287,7 @@ const FinishingScreen = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -296,7 +298,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.sm,
     },
     headerTitle: {
@@ -347,7 +349,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.xxxl,
+        paddingBottom: 20,
     },
     progressSection: {
         alignItems: 'center',

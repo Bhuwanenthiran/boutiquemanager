@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { Card, LoadingOverlay, ErrorOverlay, EmptyState } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay, EmptyState, ScreenWrapper } from '../../components/common';
 import { FormInput, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -14,6 +15,7 @@ const STAGES = [
 ];
 
 const WorkProductionScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const productionOrders = useProductionStore((s) => s.productionOrders);
     const productionStages = useProductionStore((s) => s.productionStages);
     const updateStage = useProductionStore((s) => s.updateStage);
@@ -58,12 +60,12 @@ const WorkProductionScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper useSafeTop>
             <LoadingOverlay visible={isLoading && !error} message="Processing..." />
             <ErrorOverlay
                 visible={!!error}
                 error={error}
-                onRetry={() => { }} // Dynamic retry is harder here, just dismiss
+                onRetry={() => { }}
                 onClose={clearError}
             />
             <View style={styles.header}>
@@ -117,7 +119,7 @@ const WorkProductionScreen = ({ navigation }) => {
 
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.stagesContent}
+                        contentContainerStyle={[styles.stagesContent, { paddingBottom: insets.bottom + 20 }]}
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Stepper */}
@@ -244,25 +246,20 @@ const WorkProductionScreen = ({ navigation }) => {
                                 </View>
                             );
                         })}
-                        <View style={{ height: 40 }} />
                     </ScrollView>
                 </>
             )}
-        </View>
+        </ScreenWrapper>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.bg,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.sm,
+        paddingTop: SIZES.sm,
         paddingBottom: SIZES.md,
     },
     backBtn: {
@@ -347,7 +344,6 @@ const styles = StyleSheet.create({
     },
     stagesContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.xxxl,
     },
     connectorWrap: {
         alignItems: 'center',

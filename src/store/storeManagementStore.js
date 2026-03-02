@@ -28,24 +28,28 @@ export const useStoreManagementStore = create((set, get) => ({
                 inventoryService.getInventory(),
                 inventoryService.getSoldItems(),
             ]);
-            set({ inventory, soldItems, isLoading: false });
+            set({
+                inventory: Array.isArray(inventory) ? inventory : [],
+                soldItems: Array.isArray(soldItems) ? soldItems : [],
+                isLoading: false
+            });
         } catch (error) {
             set({ isLoading: false, error: 'Failed to load store inventory.' });
-            console.error('Failed to initialize store management:', error);
         }
     },
 
     getFilteredInventory: () => {
         const { inventory, searchQuery, filterCategory } = get();
+        if (!Array.isArray(inventory)) return [];
         let filtered = [...inventory];
         if (filterCategory !== 'all') {
             filtered = filtered.filter(i => i.category === filterCategory);
         }
-        if (searchQuery.trim()) {
+        if (searchQuery && searchQuery.trim()) {
             const q = searchQuery.toLowerCase();
             filtered = filtered.filter(i =>
-                i.name.toLowerCase().includes(q) ||
-                i.category.toLowerCase().includes(q)
+                (i.name && i.name.toLowerCase().includes(q)) ||
+                (i.category && i.category.toLowerCase().includes(q))
             );
         }
         return filtered;
@@ -64,7 +68,6 @@ export const useStoreManagementStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to add item to inventory.' });
-            console.error('Add inventory item failed:', error);
             throw error;
         }
     },
@@ -79,7 +82,6 @@ export const useStoreManagementStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to update inventory item.' });
-            console.error('Update inventory item failed:', error);
             throw error;
         }
     },
@@ -104,7 +106,6 @@ export const useStoreManagementStore = create((set, get) => ({
 
         set({ isLoading: true, error: null });
         try {
-            // Service creates the sold-item record (ID, timestamp, etc.)
             const soldItem = await inventoryService.markAsSold(item, customerName);
             set((state) => ({
                 soldItems: [soldItem, ...state.soldItems],
@@ -122,14 +123,14 @@ export const useStoreManagementStore = create((set, get) => ({
             }));
         } catch (error) {
             set({ isLoading: false, error: 'Failed to complete sale transaction.' });
-            console.error('Mark as sold failed:', error);
             throw error;
         }
     },
 
     getCategories: () => {
         const { inventory } = get();
-        const cats = new Set(inventory.map(i => i.category));
+        if (!Array.isArray(inventory)) return ['all'];
+        const cats = new Set(inventory.filter(i => i.category).map(i => i.category));
         return ['all', ...Array.from(cats)];
     },
 }));

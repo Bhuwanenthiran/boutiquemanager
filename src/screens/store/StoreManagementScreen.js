@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, EmptyState, LoadingOverlay, ErrorOverlay } from '../../components/common';
+import { Card, EmptyState, LoadingOverlay, ErrorOverlay, ScreenWrapper } from '../../components/common';
 import { SearchBar, FilterChip, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -101,8 +102,11 @@ const SoldItem = React.memo(({ item, colors }) => (
 const StoreManagementScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
-    const inventory = useStoreManagementStore((s) => s.inventory);
-    const soldItems = useStoreManagementStore((s) => s.soldItems);
+    const insets = useSafeAreaInsets();
+
+    // Store values
+    const inventory = useStoreManagementStore((s) => s.inventory || []);
+    const soldItems = useStoreManagementStore((s) => s.soldItems || []);
     const searchQuery = useStoreManagementStore((s) => s.searchQuery);
     const setSearchQuery = useStoreManagementStore((s) => s.setSearchQuery);
     const filterCategory = useStoreManagementStore((s) => s.filterCategory);
@@ -116,20 +120,27 @@ const StoreManagementScreen = ({ navigation }) => {
     const clearError = useStoreManagementStore((s) => s.clearError);
 
     const [activeTab, setActiveTab] = useState('inventory');
-    const filteredInventory = getFilteredInventory();
-    const categories = getCategories();
+
+    // Memoize derived data to prevent unnecessary re-renders and potential loops
+    const filteredInventory = useMemo(() => getFilteredInventory() || [], [inventory, searchQuery, filterCategory]);
+    const categories = useMemo(() => getCategories() || ['all'], [inventory]);
 
     const flatListRef = useRef(null);
 
     useEffect(() => {
-        if (flatListRef.current && categories.length > 0) {
+        // Only scroll if we have a list and a specific filter (not 'all')
+        if (flatListRef.current && categories.length > 0 && filterCategory !== 'all') {
             const index = categories.indexOf(filterCategory);
             if (index !== -1) {
-                flatListRef.current.scrollToIndex({
-                    index,
-                    animated: true,
-                    viewPosition: 0.5,
-                });
+                try {
+                    flatListRef.current.scrollToIndex({
+                        index,
+                        animated: true,
+                        viewPosition: 0.5,
+                    });
+                } catch (e) {
+                    // Silently fail if index is not ready
+                }
             }
         }
     }, [filterCategory, categories]);
@@ -177,118 +188,120 @@ const StoreManagementScreen = ({ navigation }) => {
 
     return (
         <KeyboardAvoidingView
-            style={[styles.container, { backgroundColor: C.bg }]}
+            style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <LoadingOverlay visible={isLoading && !error} message="Processing..." />
-            <ErrorOverlay
-                visible={!!error}
-                error={error}
-                onRetry={() => { }} // Retry not easily dynamic here
-                onClose={clearError}
-            />
-            <View style={styles.header}>
-                <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Store</Text>
-                <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Inventory & sales management</Text>
-            </View>
+            <ScreenWrapper useSafeTop>
+                <LoadingOverlay visible={isLoading && !error} message="Processing..." />
+                <ErrorOverlay
+                    visible={!!error}
+                    error={error}
+                    onRetry={() => { }} // Retry not easily dynamic here
+                    onClose={clearError}
+                />
+                <View style={styles.header}>
+                    <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Store</Text>
+                    <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Inventory & sales management</Text>
+                </View>
 
-            {/* Tabs */}
-            <View style={[styles.tabBar, { backgroundColor: C.bgElevated }]}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'inventory' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
-                    onPress={() => setActiveTab('inventory')}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="cube-outline" size={16} color={activeTab === 'inventory' ? C.primary : C.textMuted} />
-                    <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'inventory' && [styles.tabTextActive, { color: C.primary }]]}>
-                        Ready Stock ({inventory.length})
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'sold' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
-                    onPress={() => setActiveTab('sold')}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="bag-check-outline" size={16} color={activeTab === 'sold' ? C.primary : C.textMuted} />
-                    <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'sold' && [styles.tabTextActive, { color: C.primary }]]}>
-                        Sold ({soldItems.length})
-                    </Text>
-                </TouchableOpacity>
-            </View>
+                {/* Tabs */}
+                <View style={[styles.tabBar, { backgroundColor: C.bgElevated }]}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'inventory' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
+                        onPress={() => setActiveTab('inventory')}
+                        disabled={isLoading}
+                    >
+                        <Ionicons name="cube-outline" size={16} color={activeTab === 'inventory' ? C.primary : C.textMuted} />
+                        <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'inventory' && [styles.tabTextActive, { color: C.primary }]]}>
+                            Ready Stock ({inventory.length})
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'sold' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
+                        onPress={() => setActiveTab('sold')}
+                        disabled={isLoading}
+                    >
+                        <Ionicons name="bag-check-outline" size={16} color={activeTab === 'sold' ? C.primary : C.textMuted} />
+                        <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'sold' && [styles.tabTextActive, { color: C.primary }]]}>
+                            Sold ({soldItems.length})
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
-            {activeTab === 'inventory' && (
-                <>
-                    <SearchBar
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        placeholder="Search inventory..."
-                        editable={!isLoading}
-                    />
-                    <FlatList
-                        ref={flatListRef}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ flexGrow: 0, marginBottom: 12 }}
-                        contentContainerStyle={styles.filtersRow}
-                        data={categories}
-                        keyExtractor={(item) => item}
-                        renderItem={({ item: cat }) => (
-                            <FilterChip
-                                label={cat === 'all' ? 'All' : cat}
-                                active={filterCategory === cat}
-                                onPress={() => setFilterCategory(cat)}
-                                disabled={isLoading}
-                            />
-                        )}
-                        onScrollToIndexFailed={(info) => {
-                            setTimeout(() => {
-                                flatListRef.current?.scrollToIndex({
-                                    index: info.index,
-                                    animated: true,
-                                    viewPosition: 0.5
-                                });
-                            }, 500);
-                        }}
-                    />
-                </>
-            )}
+                {activeTab === 'inventory' && (
+                    <>
+                        <SearchBar
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholder="Search inventory..."
+                            editable={!isLoading}
+                        />
+                        <FlatList
+                            ref={flatListRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={{ flexGrow: 0, marginBottom: 12 }}
+                            contentContainerStyle={styles.filtersRow}
+                            data={categories}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item: cat }) => (
+                                <FilterChip
+                                    label={cat === 'all' ? 'All' : cat}
+                                    active={filterCategory === cat}
+                                    onPress={() => setFilterCategory(cat)}
+                                    disabled={isLoading}
+                                />
+                            )}
+                            onScrollToIndexFailed={(info) => {
+                                setTimeout(() => {
+                                    flatListRef.current?.scrollToIndex({
+                                        index: info.index,
+                                        animated: true,
+                                        viewPosition: 0.5
+                                    });
+                                }, 500);
+                            }}
+                        />
+                    </>
+                )}
 
-            {activeTab === 'inventory' ? (
-                filteredInventory.length === 0 ? (
-                    <EmptyState icon="cube-outline" title="No items found" subtitle="Try adjusting your search or filters" />
+                {activeTab === 'inventory' ? (
+                    filteredInventory.length === 0 ? (
+                        <EmptyState icon="cube-outline" title="No items found" subtitle="Try adjusting your search or filters" />
+                    ) : (
+                        <FlatList
+                            data={filteredInventory}
+                            renderItem={renderInventoryItem}
+                            keyExtractor={(item) => item.id}
+                            contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            style={{ flex: 1 }}
+                            initialNumToRender={5}
+                            windowSize={5}
+                            maxToRenderPerBatch={5}
+                            removeClippedSubviews={Platform.OS === 'android'}
+                        />
+                    )
                 ) : (
                     <FlatList
-                        data={filteredInventory}
-                        renderItem={renderInventoryItem}
+                        data={soldItems}
+                        renderItem={renderSoldItem}
                         keyExtractor={(item) => item.id}
-                        contentContainerStyle={styles.listContent}
+                        contentContainerStyle={[styles.listContent, { paddingBottom: 100 + insets.bottom }]}
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
                         style={{ flex: 1 }}
-                        initialNumToRender={5}
+                        initialNumToRender={10}
                         windowSize={5}
-                        maxToRenderPerBatch={5}
+                        maxToRenderPerBatch={10}
                         removeClippedSubviews={Platform.OS === 'android'}
+                        ListEmptyComponent={
+                            <EmptyState icon="bag-outline" title="No sold items" subtitle="Sold items will appear here" />
+                        }
                     />
-                )
-            ) : (
-                <FlatList
-                    data={soldItems}
-                    renderItem={renderSoldItem}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    style={{ flex: 1 }}
-                    initialNumToRender={10}
-                    windowSize={5}
-                    maxToRenderPerBatch={10}
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    ListEmptyComponent={
-                        <EmptyState icon="bag-outline" title="No sold items" subtitle="Sold items will appear here" />
-                    }
-                />
-            )}
+                )}
+            </ScreenWrapper>
         </KeyboardAvoidingView>
     );
 };
@@ -300,7 +313,7 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.lg,
+        paddingTop: SIZES.lg,
         paddingBottom: SIZES.sm,
     },
     headerTitle: {
@@ -351,7 +364,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: 100,
+        paddingBottom: 20,
     },
     inventoryCard: {
         marginBottom: SIZES.md,

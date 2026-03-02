@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useOrderStore } from '../../store/orderStore';
-import { StatusBadge, Card, Divider } from '../../components/common';
+import { StatusBadge, Card, Divider, ScreenWrapper } from '../../components/common';
 import { formatDate } from '../../services/dateUtils';
 
 const OrderDetailScreen = ({ route, navigation }) => {
+    const insets = useSafeAreaInsets();
     const { orderId } = route.params;
     const orders = useOrderStore((s) => s.orders);
     const order = orders.find(o => o.id === orderId);
@@ -31,7 +33,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
     const currentStageIdx = progressStages.findIndex(s => s.key === order.productionStage);
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper useSafeTop>
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
@@ -43,7 +45,10 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}
+            >
                 {/* Status Banner */}
                 <View style={styles.statusBanner}>
                     <StatusBadge status={order.status} />
@@ -188,7 +193,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
 
                 <View style={{ height: 40 }} />
             </ScrollView>
-        </View>
+        </ScreenWrapper>
     );
 };
 
@@ -202,7 +207,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: SIZES.lg,
-        paddingTop: SIZES.xxxl + SIZES.sm,
+        paddingTop: SIZES.sm,
         paddingBottom: SIZES.md,
     },
     backBtn: {
@@ -229,7 +234,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: SIZES.lg,
-        paddingBottom: SIZES.xxxl,
+        paddingBottom: 20,
     },
     statusBanner: {
         flexDirection: 'row',
