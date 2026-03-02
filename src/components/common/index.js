@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
@@ -145,6 +145,22 @@ export const LoadingSkeleton = ({ width = '100%', height = 16, style }) => {
     const C = getColors(isDark);
     return (
         <View style={[styles.skeleton, { width, height, borderRadius: height / 2, backgroundColor: C.borderLight }, style]} />
+    );
+};
+
+export const LoadingOverlay = ({ visible, message = 'Loading...' }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    if (!visible) return null;
+
+    return (
+        <View style={styles.loadingOverlay}>
+            <View style={[styles.loadingCard, { backgroundColor: C.bgCard }]}>
+                <ActivityIndicator size="large" color={C.primary} />
+                <Text style={[styles.loadingText, { color: C.textSecondary }]}>{message}</Text>
+            </View>
+        </View>
     );
 };
 
@@ -300,5 +316,24 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: COLORS.divider,
         marginVertical: SIZES.md,
+    },
+    loadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 999,
+    },
+    loadingCard: {
+        borderRadius: SIZES.radiusLg,
+        padding: SIZES.xl,
+        alignItems: 'center',
+        ...SHADOWS.medium,
+        minWidth: 140,
+    },
+    loadingText: {
+        fontSize: SIZES.small,
+        ...FONTS.medium,
+        marginTop: SIZES.md,
     },
 });

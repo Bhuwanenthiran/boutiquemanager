@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, StatusBadge, FloatingButton, EmptyState } from '../../components/common';
+import { Card, StatusBadge, FloatingButton, EmptyState, LoadingOverlay } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
+import { formatDate } from '../../services/dateUtils';
 
 const ORDER_FILTERS = [
     { label: 'All', value: 'all' },
@@ -21,9 +22,11 @@ const OrderListScreen = ({ navigation }) => {
     const orders = useOrderStore((s) => s.orders);
     const filterStatus = useOrderStore((s) => s.filterStatus);
     const searchQuery = useOrderStore((s) => s.searchQuery);
+    const isLoading = useOrderStore((s) => s.isLoading);
     const setFilterStatus = useOrderStore((s) => s.setFilterStatus);
     const setSearchQuery = useOrderStore((s) => s.setSearchQuery);
     const getFilteredOrders = useOrderStore((s) => s.getFilteredOrders);
+    const fetchOrders = useOrderStore((s) => s.fetchOrders);
 
     const filteredOrders = getFilteredOrders();
 
@@ -34,6 +37,10 @@ const OrderListScreen = ({ navigation }) => {
             case 'low': return C.success;
             default: return C.textMuted;
         }
+    };
+
+    const onRefresh = async () => {
+        await fetchOrders();
     };
 
     const renderOrder = ({ item }) => (
@@ -58,7 +65,7 @@ const OrderListScreen = ({ navigation }) => {
                 </View>
                 <View style={styles.detailRow}>
                     <Ionicons name="calendar-outline" size={14} color={C.textMuted} />
-                    <Text style={[styles.detailText, { color: C.textSecondary }]}>Due: {item.deliveryDate}</Text>
+                    <Text style={[styles.detailText, { color: C.textSecondary }]}>Due: {formatDate(item.deliveryDate)}</Text>
                 </View>
             </View>
 
@@ -85,6 +92,8 @@ const OrderListScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: C.bg }]}>
+            <LoadingOverlay visible={isLoading && orders.length > 0} message="Updating orders..." />
+
             {/* Header */}
             <View style={styles.header}>
                 <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Orders</Text>
@@ -104,6 +113,7 @@ const OrderListScreen = ({ navigation }) => {
                 showsHorizontalScrollIndicator={false}
                 style={{ flexGrow: 0, marginBottom: 12 }}
                 contentContainerStyle={styles.filtersRow}
+                keyboardShouldPersistTaps="handled"
             >
                 {ORDER_FILTERS.map((f) => (
                     <FilterChip
@@ -111,12 +121,17 @@ const OrderListScreen = ({ navigation }) => {
                         label={f.label}
                         active={filterStatus === f.value}
                         onPress={() => setFilterStatus(f.value)}
+                        disabled={isLoading}
                     />
                 ))}
             </ScrollView>
 
             {/* Order List */}
-            {filteredOrders.length === 0 ? (
+            {isLoading && orders.length === 0 ? (
+                <View style={{ flex: 1, padding: SIZES.lg }}>
+                    <Text style={{ color: C.textMuted, textAlign: 'center' }}>Loading orders...</Text>
+                </View>
+            ) : filteredOrders.length === 0 ? (
                 <EmptyState
                     icon="receipt-outline"
                     title="No orders found"
@@ -132,12 +147,15 @@ const OrderListScreen = ({ navigation }) => {
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     style={{ flex: 1 }}
+                    refreshing={isLoading}
+                    onRefresh={onRefresh}
                 />
             )}
 
             <FloatingButton
                 icon="add"
                 onPress={() => navigation.navigate('OrderEntry')}
+                disabled={isLoading}
             />
         </View>
     );

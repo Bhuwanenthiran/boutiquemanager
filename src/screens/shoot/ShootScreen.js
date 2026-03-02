@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useShootStore } from '../../store/shootStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card } from '../../components/common';
+import { Card, LoadingOverlay } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -14,6 +14,7 @@ const ShootScreen = ({ navigation }) => {
     const updateShoot = useShootStore((s) => s.updateShoot);
     const addShoot = useShootStore((s) => s.addShoot);
     const addImage = useShootStore((s) => s.addImage);
+    const isLoading = useShootStore((s) => s.isLoading);
 
     const [selectedOrder, setSelectedOrder] = useState(orders[0]?.id || null);
 
@@ -29,7 +30,7 @@ const ShootScreen = ({ navigation }) => {
             });
             if (!result.canceled && result.assets) {
                 if (!currentShoot) {
-                    addShoot({
+                    await addShoot({
                         orderId: selectedOrder,
                         images: result.assets.map(a => a.uri),
                         productShootDone: false,
@@ -38,9 +39,9 @@ const ShootScreen = ({ navigation }) => {
                         notes: '',
                     });
                 } else {
-                    result.assets.forEach(asset => {
-                        addImage(currentShoot.id, asset.uri);
-                    });
+                    for (const asset of result.assets) {
+                        await addImage(currentShoot.id, asset.uri);
+                    }
                 }
             }
         } catch (e) {
@@ -58,9 +59,13 @@ const ShootScreen = ({ navigation }) => {
         }
     };
 
-    const handleToggleStatus = (field) => {
+    const handleToggleStatus = async (field) => {
         if (currentShoot) {
-            updateShoot(currentShoot.id, { [field]: !currentShoot[field] });
+            try {
+                await updateShoot(currentShoot.id, { [field]: !currentShoot[field] });
+            } catch (error) {
+                // Handled in store
+            }
         }
     };
 
@@ -72,18 +77,25 @@ const ShootScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <LoadingOverlay visible={isLoading} message="Processing media..." />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Media & Shoot</Text>
                 <Text style={styles.headerSubtitle}>Product photography & social uploads</Text>
             </View>
 
             {/* Order Selector */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.orderTabs}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.orderTabs}
+                keyboardShouldPersistTaps="handled"
+            >
                 {orders.map(o => (
                     <TouchableOpacity
                         key={o.id}
                         style={[styles.orderTab, selectedOrder === o.id && styles.orderTabActive]}
                         onPress={() => setSelectedOrder(o.id)}
+                        disabled={isLoading}
                     >
                         <Text style={[styles.orderTabId, selectedOrder === o.id && styles.orderTabIdActive]}>{o.id}</Text>
                         <Text style={[styles.orderTabName, selectedOrder === o.id && styles.orderTabNameActive]} numberOfLines={1}>{o.designName}</Text>
@@ -91,7 +103,11 @@ const ShootScreen = ({ navigation }) => {
                 ))}
             </ScrollView>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Image Gallery */}
                 <Card elevated>
                     <View style={styles.sectionHead}>
@@ -106,12 +122,12 @@ const ShootScreen = ({ navigation }) => {
                                     <Image source={{ uri }} style={styles.thumbImage} />
                                 </View>
                             ))}
-                            <TouchableOpacity style={styles.addImageBtn} onPress={handlePickImage}>
+                            <TouchableOpacity style={styles.addImageBtn} onPress={handlePickImage} disabled={isLoading}>
                                 <Ionicons name="add" size={28} color={COLORS.textMuted} />
                             </TouchableOpacity>
                         </ScrollView>
                     ) : (
-                        <TouchableOpacity style={styles.uploadArea} onPress={handlePickImage}>
+                        <TouchableOpacity style={styles.uploadArea} onPress={handlePickImage} disabled={isLoading}>
                             <View style={styles.uploadIconWrap}>
                                 <Ionicons name="cloud-upload-outline" size={32} color={COLORS.primary} />
                             </View>
@@ -134,6 +150,7 @@ const ShootScreen = ({ navigation }) => {
                             style={styles.statusItem}
                             onPress={() => handleToggleStatus(item.key)}
                             activeOpacity={0.7}
+                            disabled={isLoading}
                         >
                             <View style={[styles.statusIcon, { backgroundColor: item.color + '18' }]}>
                                 <Ionicons name={item.icon} size={20} color={item.color} />
@@ -173,6 +190,7 @@ const ShootScreen = ({ navigation }) => {
                         onPress={handleShare}
                         variant="outline"
                         size="small"
+                        disabled={isLoading}
                     />
                 </Card>
 

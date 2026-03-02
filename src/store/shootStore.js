@@ -1,20 +1,63 @@
 import { create } from 'zustand';
-import { MOCK_SHOOTS } from '../services/mockData';
+import { productionService } from '../services/productionService';
 
+/**
+ * ShootStore — manages product shoot/media state.
+ * 
+ * ARCHITECTURE: Screen → Store → Service → Data Source
+ * This store NEVER imports mockData directly. All data flows through productionService.
+ */
 export const useShootStore = create((set, get) => ({
-    shoots: [...MOCK_SHOOTS],
+    shoots: [],
+    isLoading: false,
+
+    /**
+     * Initialize shoot data from the service layer.
+     */
+    init: async () => {
+        set({ isLoading: true });
+        try {
+            const shoots = await productionService.getShoots();
+            set({ shoots, isLoading: false });
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Failed to initialize shoot store:', error);
+        }
+    },
 
     getShootByOrder: (orderId) => {
         return get().shoots.find(s => s.orderId === orderId) || null;
     },
 
-    addShoot: (shoot) => set((state) => ({
-        shoots: [...state.shoots, { ...shoot, id: `s${state.shoots.length + 1}` }],
-    })),
+    addShoot: async (shoot) => {
+        set({ isLoading: true });
+        try {
+            const newShoot = await productionService.addShoot(shoot);
+            set((state) => ({
+                shoots: [...state.shoots, newShoot],
+                isLoading: false,
+            }));
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Add shoot failed:', error);
+            throw error;
+        }
+    },
 
-    updateShoot: (id, updates) => set((state) => ({
-        shoots: state.shoots.map(s => s.id === id ? { ...s, ...updates } : s),
-    })),
+    updateShoot: async (id, updates) => {
+        set({ isLoading: true });
+        try {
+            await productionService.updateShoot(id, updates);
+            set((state) => ({
+                shoots: state.shoots.map(s => s.id === id ? { ...s, ...updates } : s),
+                isLoading: false,
+            }));
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Update shoot failed:', error);
+            throw error;
+        }
+    },
 
     addImage: (shootId, imageUri) => set((state) => ({
         shoots: state.shoots.map(s =>

@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, EmptyState } from '../../components/common';
+import { Card, EmptyState, LoadingOverlay } from '../../components/common';
 import { SearchBar, FilterChip, FormButton } from '../../components/forms';
+import { formatDate } from '../../services/dateUtils';
 
 const StoreManagementScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
@@ -20,6 +21,7 @@ const StoreManagementScreen = ({ navigation }) => {
     const getCategories = useStoreManagementStore((s) => s.getCategories);
     const updateQuantity = useStoreManagementStore((s) => s.updateQuantity);
     const markAsSold = useStoreManagementStore((s) => s.markAsSold);
+    const isLoading = useStoreManagementStore((s) => s.isLoading);
 
     const [activeTab, setActiveTab] = useState('inventory');
     const filteredInventory = getFilteredInventory();
@@ -55,9 +57,25 @@ const StoreManagementScreen = ({ navigation }) => {
             `Mark "${item.name}" as sold?`,
             [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Sell', onPress: () => markAsSold(item.id, 'Walk-in Customer') },
+                {
+                    text: 'Sell', onPress: async () => {
+                        try {
+                            await markAsSold(item.id, 'Walk-in Customer');
+                        } catch (error) {
+                            // Handled in store
+                        }
+                    }
+                },
             ]
         );
+    };
+
+    const handleUpdateQty = async (id, delta) => {
+        try {
+            await updateQuantity(id, delta);
+        } catch (error) {
+            // Handled in store
+        }
     };
 
     const renderInventoryItem = ({ item }) => {
@@ -85,11 +103,19 @@ const StoreManagementScreen = ({ navigation }) => {
                     <View style={styles.detailItem}>
                         <Text style={styles.detailLabel}>Quantity</Text>
                         <View style={styles.qtyControls}>
-                            <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, -1)}>
+                            <TouchableOpacity
+                                style={styles.qtyBtn}
+                                onPress={() => handleUpdateQty(item.id, -1)}
+                                disabled={isLoading}
+                            >
                                 <Ionicons name="remove" size={16} color={COLORS.textPrimary} />
                             </TouchableOpacity>
                             <Text style={styles.qtyValue}>{item.quantity}</Text>
-                            <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(item.id, 1)}>
+                            <TouchableOpacity
+                                style={styles.qtyBtn}
+                                onPress={() => handleUpdateQty(item.id, 1)}
+                                disabled={isLoading}
+                            >
                                 <Ionicons name="add" size={16} color={COLORS.textPrimary} />
                             </TouchableOpacity>
                         </View>
@@ -97,7 +123,12 @@ const StoreManagementScreen = ({ navigation }) => {
                 </View>
 
                 {item.quantity > 0 && (
-                    <TouchableOpacity style={styles.sellBtn} onPress={() => handleSell(item)} activeOpacity={0.7}>
+                    <TouchableOpacity
+                        style={styles.sellBtn}
+                        onPress={() => handleSell(item)}
+                        activeOpacity={0.7}
+                        disabled={isLoading}
+                    >
                         <Ionicons name="cart-outline" size={14} color={COLORS.primary} />
                         <Text style={styles.sellBtnText}>Mark as Sold</Text>
                     </TouchableOpacity>
@@ -122,7 +153,7 @@ const StoreManagementScreen = ({ navigation }) => {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                     <Text style={styles.soldPrice}>₹{item.price.toLocaleString('en-IN')}</Text>
-                    <Text style={styles.soldDate}>{item.soldDate}</Text>
+                    <Text style={styles.soldDate}>{formatDate(item.soldDate)}</Text>
                 </View>
             </View>
         </Card>
@@ -133,6 +164,7 @@ const StoreManagementScreen = ({ navigation }) => {
             style={[styles.container, { backgroundColor: C.bg }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
+            <LoadingOverlay visible={isLoading} message="Processing..." />
             <View style={styles.header}>
                 <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Store</Text>
                 <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Inventory & sales management</Text>
@@ -143,6 +175,7 @@ const StoreManagementScreen = ({ navigation }) => {
                 <TouchableOpacity
                     style={[styles.tab, activeTab === 'inventory' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
                     onPress={() => setActiveTab('inventory')}
+                    disabled={isLoading}
                 >
                     <Ionicons name="cube-outline" size={16} color={activeTab === 'inventory' ? C.primary : C.textMuted} />
                     <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'inventory' && [styles.tabTextActive, { color: C.primary }]]}>
@@ -152,6 +185,7 @@ const StoreManagementScreen = ({ navigation }) => {
                 <TouchableOpacity
                     style={[styles.tab, activeTab === 'sold' && [styles.tabActive, { backgroundColor: C.bgCard }]]}
                     onPress={() => setActiveTab('sold')}
+                    disabled={isLoading}
                 >
                     <Ionicons name="bag-check-outline" size={16} color={activeTab === 'sold' ? C.primary : C.textMuted} />
                     <Text style={[styles.tabText, { color: C.textMuted }, activeTab === 'sold' && [styles.tabTextActive, { color: C.primary }]]}>
@@ -162,7 +196,12 @@ const StoreManagementScreen = ({ navigation }) => {
 
             {activeTab === 'inventory' && (
                 <>
-                    <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Search inventory..." />
+                    <SearchBar
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        placeholder="Search inventory..."
+                        editable={!isLoading}
+                    />
                     <FlatList
                         ref={flatListRef}
                         horizontal
@@ -176,6 +215,7 @@ const StoreManagementScreen = ({ navigation }) => {
                                 label={cat === 'all' ? 'All' : cat}
                                 active={filterCategory === cat}
                                 onPress={() => setFilterCategory(cat)}
+                                disabled={isLoading}
                             />
                         )}
                         onScrollToIndexFailed={(info) => {

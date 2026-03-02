@@ -6,6 +6,7 @@ import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../../theme';
 import { useThemeStore } from '../../../store/themeStore';
 import { useOrderStore } from '../../../store/orderStore';
 import { FormButton } from '../../../components/forms';
+import { LoadingOverlay, LoadingSkeleton } from '../../../components/common';
 
 // Sub-components
 import StepCustomer from './StepCustomer';
@@ -29,6 +30,7 @@ const OrderEntryContainer = ({ navigation }) => {
     const addOrder = useOrderStore((s) => s.addOrder);
     const saveDraft = useOrderStore((s) => s.saveDraft);
     const draftOrder = useOrderStore((s) => s.draftOrder);
+    const isLoading = useOrderStore((s) => s.isLoading);
 
     const [form, setForm] = useState(draftOrder || {
         customerId: '',
@@ -90,6 +92,7 @@ const OrderEntryContainer = ({ navigation }) => {
     };
 
     const canProceed = () => {
+        if (isLoading) return false;
         switch (step) {
             case 0: return form.customerName.length > 0;
             case 1: return form.designId.length > 0;
@@ -99,7 +102,7 @@ const OrderEntryContainer = ({ navigation }) => {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const totalAmt = parseFloat(form.totalAmount) || 0;
         const advanceAmt = parseFloat(form.advanceAmount) || 0;
         const order = {
@@ -110,10 +113,15 @@ const OrderEntryContainer = ({ navigation }) => {
             status: 'Pending',
             productionStage: 'pending',
         };
-        addOrder(order);
-        Alert.alert('Success', 'Order created successfully!', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+
+        try {
+            await addOrder(order);
+            Alert.alert('Success', 'Order created successfully!', [
+                { text: 'OK', onPress: () => navigation.goBack() },
+            ]);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to create order. Please try again.');
+        }
     };
 
     const handleSaveDraft = () => {
@@ -129,7 +137,7 @@ const OrderEntryContainer = ({ navigation }) => {
     };
 
     const renderStepContent = () => {
-        const commonProps = { form, updateForm, styles };
+        const commonProps = { form, updateForm, styles, isLoading };
         switch (step) {
             case 0:
                 return (
@@ -169,13 +177,14 @@ const OrderEntryContainer = ({ navigation }) => {
             style={[styles.container, { backgroundColor: C.bg }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+            <LoadingOverlay visible={isLoading} message="Creating order..." />
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
                     <Ionicons name="arrow-back" size={22} color={C.textPrimary} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: C.textPrimary }]}>New Order</Text>
-                <TouchableOpacity onPress={handleSaveDraft} style={styles.draftBtn}>
+                <TouchableOpacity onPress={handleSaveDraft} style={styles.draftBtn} disabled={isLoading}>
                     <Ionicons name="bookmark-outline" size={18} color={C.primary} />
                     <Text style={[styles.draftText, { color: C.primary }]}>Draft</Text>
                 </TouchableOpacity>
@@ -225,6 +234,7 @@ const OrderEntryContainer = ({ navigation }) => {
                         icon="arrow-back-outline"
                         onPress={() => setStep(step - 1)}
                         size="medium"
+                        disabled={isLoading}
                     />
                 )}
                 <View style={{ flex: 1, marginLeft: step > 0 ? SIZES.sm : 0 }}>
@@ -241,6 +251,7 @@ const OrderEntryContainer = ({ navigation }) => {
                             icon="checkmark-circle-outline"
                             onPress={handleSubmit}
                             disabled={!canProceed()}
+                            loading={isLoading}
                         />
                     )}
                 </View>

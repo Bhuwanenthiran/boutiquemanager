@@ -1,17 +1,43 @@
 import { create } from 'zustand';
 import { orderService } from '../services/orderService';
-import { MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_DESIGNS, MOCK_TAILORS, MEASUREMENT_FIELDS } from '../services/mockData';
 
+/**
+ * OrderStore — manages all order-related state.
+ * 
+ * ARCHITECTURE: Screen → Store → Service → Data Source
+ * This store NEVER imports mockData directly. All data flows through orderService.
+ */
 export const useOrderStore = create((set, get) => ({
-    orders: [...MOCK_ORDERS],
-    customers: [...MOCK_CUSTOMERS],
-    designs: [...MOCK_DESIGNS],
-    tailors: [...MOCK_TAILORS],
-    measurementFields: MEASUREMENT_FIELDS,
+    orders: [],
+    customers: [],
+    designs: [],
+    tailors: [],
+    measurementFields: {},
     draftOrder: null,
     filterStatus: 'all',
     searchQuery: '',
     isLoading: false,
+
+    /**
+     * Initialize all order-related data from the service layer.
+     * Should be called once on app start or screen mount.
+     */
+    init: async () => {
+        set({ isLoading: true });
+        try {
+            const [orders, customers, designs, tailors, measurementFields] = await Promise.all([
+                orderService.getOrders(),
+                orderService.getCustomers(),
+                orderService.getDesigns(),
+                orderService.getTailors(),
+                orderService.getMeasurementFields(),
+            ]);
+            set({ orders, customers, designs, tailors, measurementFields, isLoading: false });
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Failed to initialize order store:', error);
+        }
+    },
 
     // Actions
     fetchOrders: async () => {
@@ -63,24 +89,32 @@ export const useOrderStore = create((set, get) => ({
     },
 
     updateOrder: async (id, updates) => {
+        set({ isLoading: true });
         try {
             const updated = await orderService.updateOrder(id, updates);
             set((state) => ({
                 orders: state.orders.map(o => o.id === id ? { ...o, ...updated } : o),
+                isLoading: false,
             }));
         } catch (error) {
+            set({ isLoading: false });
             console.error('Update failed:', error);
+            throw error;
         }
     },
 
     deleteOrder: async (id) => {
+        set({ isLoading: true });
         try {
             await orderService.deleteOrder(id);
             set((state) => ({
                 orders: state.orders.filter(o => o.id !== id),
+                isLoading: false,
             }));
         } catch (error) {
+            set({ isLoading: false });
             console.error('Delete failed:', error);
+            throw error;
         }
     },
 
@@ -88,13 +122,17 @@ export const useOrderStore = create((set, get) => ({
     clearDraft: () => set({ draftOrder: null }),
 
     updateOrderStatus: async (id, status) => {
+        set({ isLoading: true });
         try {
             await orderService.updateOrder(id, { status });
             set((state) => ({
                 orders: state.orders.map(o => o.id === id ? { ...o, status } : o),
+                isLoading: false,
             }));
         } catch (error) {
+            set({ isLoading: false });
             console.error('Update status failed:', error);
+            throw error;
         }
     },
 }));

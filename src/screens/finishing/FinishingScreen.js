@@ -4,8 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useFinishingStore } from '../../store/finishingStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card } from '../../components/common';
+import { Card, LoadingOverlay } from '../../components/common';
 import { FormButton, FormInput } from '../../components/forms';
+import { formatDate } from '../../services/dateUtils';
 
 const CHECKLIST_ITEMS = [
     { key: 'checking', label: 'Quality Checking', icon: 'search-outline', description: 'Inspect stitching quality & measurements' },
@@ -20,6 +21,7 @@ const FinishingScreen = ({ navigation }) => {
     const getFinishing = useFinishingStore((s) => s.getFinishing);
     const toggleChecklist = useFinishingStore((s) => s.toggleChecklist);
     const markAsReady = useFinishingStore((s) => s.markAsReady);
+    const isLoading = useFinishingStore((s) => s.isLoading);
     const updateOrderStatus = useOrderStore((s) => s.updateOrderStatus);
 
     const [selectedOrder, setSelectedOrder] = useState(orders[0]?.id || null);
@@ -43,7 +45,7 @@ const FinishingScreen = ({ navigation }) => {
 
     const allChecked = finishing.checking && finishing.ironing && finishing.threadCutting && finishing.qualityApproval;
 
-    const handleToggle = (key) => {
+    const handleToggle = async (key) => {
         if (isStepLocked(key)) {
             Alert.alert('Step Locked', 'Complete previous step first.');
             return;
@@ -65,20 +67,29 @@ const FinishingScreen = ({ navigation }) => {
             Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true })
         ]).start();
 
-        toggleChecklist(selectedOrder, key);
+        try {
+            await toggleChecklist(selectedOrder, key);
+        } catch (error) {
+            // Handled in store
+        }
     };
 
-    const handleMarkReady = () => {
+    const handleMarkReady = async () => {
         if (!approverName.trim()) {
             Alert.alert('Required', 'Please enter approver name');
             return;
         }
-        markAsReady(selectedOrder, approverName);
-        updateOrderStatus(selectedOrder, 'Ready');
-        setShowApprovalModal(false);
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 3000);
-        Alert.alert('✨ Order Ready!', 'This order has been marked as ready for delivery.');
+
+        try {
+            await markAsReady(selectedOrder, approverName);
+            await updateOrderStatus(selectedOrder, 'Ready');
+            setShowApprovalModal(false);
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3000);
+            Alert.alert('✨ Order Ready!', 'This order has been marked as ready for delivery.');
+        } catch (error) {
+            // Handled in store
+        }
     };
 
     const completedCount = CHECKLIST_ITEMS.filter(i => finishing[i.key]).length;
@@ -86,18 +97,25 @@ const FinishingScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <LoadingOverlay visible={isLoading} message="Processing..." />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Finishing</Text>
                 <Text style={styles.headerSubtitle}>Quality check & prepare for delivery</Text>
             </View>
 
             {/* Order Selector */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.orderTabs}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.orderTabs}
+                keyboardShouldPersistTaps="handled"
+            >
                 {orders.map(order => (
                     <TouchableOpacity
                         key={order.id}
                         style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
                         onPress={() => setSelectedOrder(order.id)}
+                        disabled={isLoading}
                     >
                         <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
                         <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
@@ -107,7 +125,11 @@ const FinishingScreen = ({ navigation }) => {
                 ))}
             </ScrollView>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Progress Circle */}
                 <View style={styles.progressSection}>
                     <View style={styles.progressCircle}>
@@ -128,13 +150,14 @@ const FinishingScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 activeOpacity={locked ? 1 : 0.7}
                                 onPress={() => handleToggle(item.key)}
+                                disabled={locked || isLoading}
                             >
                                 <Card style={[styles.checkItem, completed && styles.checkItemDone]}>
                                     <View style={styles.checkRow}>
                                         <TouchableOpacity
                                             style={[styles.checkbox, completed && styles.checkboxChecked]}
                                             onPress={() => handleToggle(item.key)}
-                                            disabled={locked}
+                                            disabled={locked || isLoading}
                                         >
                                             {completed ? (
                                                 <Ionicons name="checkmark" size={16} color={COLORS.textOnPrimary} />
@@ -162,7 +185,7 @@ const FinishingScreen = ({ navigation }) => {
                         <Ionicons name="ribbon-outline" size={24} color={COLORS.success} />
                         <View style={{ marginLeft: SIZES.md, flex: 1 }}>
                             <Text style={styles.approvalTitle}>Approved & Ready</Text>
-                            <Text style={styles.approvalMeta}>By {finishing.approvedBy} on {finishing.approvedAt}</Text>
+                            <Text style={styles.approvalMeta}>By {finishing.approvedBy} on {formatDate(finishing.approvedAt)}</Text>
                         </View>
                     </Card>
                 )}
@@ -181,6 +204,7 @@ const FinishingScreen = ({ navigation }) => {
                                 setShowApprovalModal(true);
                             }}
                             disabled={!allChecked}
+                            loading={isLoading}
                         />
                     </View>
                 )}
@@ -213,14 +237,15 @@ const FinishingScreen = ({ navigation }) => {
                             placeholder="Enter your name"
                             icon="person-outline"
                             required
+                            editable={!isLoading}
                         />
 
                         {/* Signature Area */}
-                        <View style={styles.signatureArea}>
+                        <TouchableOpacity style={styles.signatureArea} disabled={isLoading}>
                             <Ionicons name="finger-print-outline" size={28} color={COLORS.textMuted} />
                             <Text style={styles.signatureText}>Digital Signature</Text>
                             <Text style={styles.signatureHint}>Tap to sign (simulated)</Text>
-                        </View>
+                        </TouchableOpacity>
 
                         <View style={styles.modalActions}>
                             <FormButton
@@ -228,6 +253,7 @@ const FinishingScreen = ({ navigation }) => {
                                 variant="outline"
                                 onPress={() => setShowApprovalModal(false)}
                                 size="medium"
+                                disabled={isLoading}
                             />
                             <View style={{ width: SIZES.sm }} />
                             <FormButton
@@ -235,6 +261,7 @@ const FinishingScreen = ({ navigation }) => {
                                 icon="checkmark-circle-outline"
                                 onPress={handleMarkReady}
                                 size="medium"
+                                loading={isLoading}
                             />
                         </View>
                     </View>

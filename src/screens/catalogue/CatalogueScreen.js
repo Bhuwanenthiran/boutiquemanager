@@ -3,8 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useCatalogueStore } from '../../store/catalogueStore';
-import { Card, EmptyState, StatusBadge } from '../../components/common';
+import { Card, EmptyState, StatusBadge, LoadingOverlay } from '../../components/common';
 import { FormButton } from '../../components/forms';
+import { formatDate } from '../../services/dateUtils';
 
 const TABS = [
     { key: 'hold', label: 'Hold', icon: 'pause-circle-outline' },
@@ -23,6 +24,7 @@ const CatalogueScreen = ({ navigation }) => {
     const deleteCancelledOrder = useCatalogueStore((s) => s.deleteCancelledOrder);
     const deleteAlteration = useCatalogueStore((s) => s.deleteAlteration);
     const updateAlteration = useCatalogueStore((s) => s.updateAlteration);
+    const isLoading = useCatalogueStore((s) => s.isLoading);
 
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState(null);
@@ -34,18 +36,22 @@ const CatalogueScreen = ({ navigation }) => {
         setShowModal(true);
     };
 
-    const executeAction = () => {
-        if (modalAction === 'restore') {
-            restoreHoldOrder(modalItem.id);
-            Alert.alert('Restored', 'Order has been restored successfully');
-        } else if (modalAction === 'delete_hold') {
-            removeHoldOrder(modalItem.id);
-        } else if (modalAction === 'delete_cancelled') {
-            deleteCancelledOrder(modalItem.id);
-        } else if (modalAction === 'delete_alteration') {
-            deleteAlteration(modalItem.id);
-        } else if (modalAction === 'complete_alteration') {
-            updateAlteration(modalItem.id, { status: 'completed' });
+    const executeAction = async () => {
+        try {
+            if (modalAction === 'restore') {
+                await restoreHoldOrder(modalItem.id);
+                Alert.alert('Restored', 'Order has been restored successfully');
+            } else if (modalAction === 'delete_hold') {
+                await removeHoldOrder(modalItem.id);
+            } else if (modalAction === 'delete_cancelled') {
+                await deleteCancelledOrder(modalItem.id);
+            } else if (modalAction === 'delete_alteration') {
+                await deleteAlteration(modalItem.id);
+            } else if (modalAction === 'complete_alteration') {
+                await updateAlteration(modalItem.id, { status: 'completed' });
+            }
+        } catch (error) {
+            // Handled in store
         }
         setShowModal(false);
     };
@@ -59,7 +65,7 @@ const CatalogueScreen = ({ navigation }) => {
                 <View style={{ flex: 1, marginLeft: SIZES.md }}>
                     <Text style={styles.cardTitle}>{item.customerName}</Text>
                     <Text style={styles.cardSubtitle}>{item.designName}</Text>
-                    <Text style={styles.cardMeta}>Order: {item.orderId} • {item.holdDate}</Text>
+                    <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.holdDate)}</Text>
                 </View>
             </View>
             <View style={styles.reasonWrap}>
@@ -67,11 +73,19 @@ const CatalogueScreen = ({ navigation }) => {
                 <Text style={styles.reasonText}>{item.reason}</Text>
             </View>
             <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => confirmAction('restore', item)}>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => confirmAction('restore', item)}
+                    disabled={isLoading}
+                >
                     <Ionicons name="refresh-outline" size={16} color={COLORS.success} />
                     <Text style={[styles.actionText, { color: COLORS.success }]}>Restore</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => confirmAction('delete_hold', item)}>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => confirmAction('delete_hold', item)}
+                    disabled={isLoading}
+                >
                     <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                     <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
                 </TouchableOpacity>
@@ -88,7 +102,7 @@ const CatalogueScreen = ({ navigation }) => {
                 <View style={{ flex: 1, marginLeft: SIZES.md }}>
                     <Text style={styles.cardTitle}>{item.customerName}</Text>
                     <Text style={styles.cardSubtitle}>{item.designName}</Text>
-                    <Text style={styles.cardMeta}>Order: {item.orderId} • {item.cancelledDate}</Text>
+                    <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.cancelledDate)}</Text>
                 </View>
             </View>
             <View style={styles.reasonWrap}>
@@ -104,7 +118,11 @@ const CatalogueScreen = ({ navigation }) => {
                 </View>
             </View>
             <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => confirmAction('delete_cancelled', item)}>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => confirmAction('delete_cancelled', item)}
+                    disabled={isLoading}
+                >
                     <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                     <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
                 </TouchableOpacity>
@@ -121,7 +139,7 @@ const CatalogueScreen = ({ navigation }) => {
                 <View style={{ flex: 1, marginLeft: SIZES.md }}>
                     <Text style={styles.cardTitle}>{item.customerName}</Text>
                     <Text style={styles.cardSubtitle}>{item.item} — {item.type}</Text>
-                    <Text style={styles.cardMeta}>{item.date}</Text>
+                    <Text style={styles.cardMeta}>{formatDate(item.date)}</Text>
                 </View>
                 <StatusBadge status={item.status} size="small" />
             </View>
@@ -133,12 +151,20 @@ const CatalogueScreen = ({ navigation }) => {
             )}
             <View style={styles.cardActions}>
                 {item.status !== 'completed' && (
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => confirmAction('complete_alteration', item)}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => confirmAction('complete_alteration', item)}
+                        disabled={isLoading}
+                    >
                         <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.success} />
                         <Text style={[styles.actionText, { color: COLORS.success }]}>Complete</Text>
                     </TouchableOpacity>
                 )}
-                <TouchableOpacity style={styles.actionBtn} onPress={() => confirmAction('delete_alteration', item)}>
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => confirmAction('delete_alteration', item)}
+                    disabled={isLoading}
+                >
                     <Ionicons name="trash-outline" size={16} color={COLORS.error} />
                     <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
                 </TouchableOpacity>
@@ -159,6 +185,7 @@ const CatalogueScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <LoadingOverlay visible={isLoading} message="Processing..." />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Catalogue</Text>
                 <Text style={styles.headerSubtitle}>Hold, cancelled & alteration records</Text>
@@ -171,6 +198,7 @@ const CatalogueScreen = ({ navigation }) => {
                         key={tab.key}
                         style={[styles.segment, activeTab === tab.key && styles.segmentActive]}
                         onPress={() => setActiveTab(tab.key)}
+                        disabled={isLoading}
                     >
                         <Ionicons name={tab.icon} size={16} color={activeTab === tab.key ? COLORS.primary : COLORS.textMuted} />
                         <Text style={[styles.segmentText, activeTab === tab.key && styles.segmentTextActive]}>{tab.label}</Text>
@@ -208,12 +236,19 @@ const CatalogueScreen = ({ navigation }) => {
                             {modalAction?.includes('delete') ? 'This action cannot be undone.' : 'Are you sure you want to proceed?'}
                         </Text>
                         <View style={styles.modalActions}>
-                            <FormButton title="Cancel" variant="outline" onPress={() => setShowModal(false)} size="small" />
+                            <FormButton
+                                title="Cancel"
+                                variant="outline"
+                                onPress={() => setShowModal(false)}
+                                size="small"
+                                disabled={isLoading}
+                            />
                             <View style={{ width: SIZES.sm }} />
                             <FormButton
                                 title={modalAction?.includes('delete') ? 'Delete' : 'Confirm'}
                                 onPress={executeAction}
                                 size="small"
+                                loading={isLoading}
                             />
                         </View>
                     </View>

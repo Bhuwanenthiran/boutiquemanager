@@ -161,14 +161,24 @@ const MoreMenuScreen = ({ navigation }) => {
     ];
 
     const handleLogout = () => {
-        Alert.alert(
-            'Log Out',
-            'Are you sure you want to log out?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Log Out', style: 'destructive', onPress: () => logout() },
-            ]
-        );
+        const performLogout = () => {
+            logout();
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm('Are you sure you want to log out?')) {
+                performLogout();
+            }
+        } else {
+            Alert.alert(
+                'Log Out',
+                'Are you sure you want to log out?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Log Out', style: 'destructive', onPress: performLogout },
+                ]
+            );
+        }
     };
 
     return (

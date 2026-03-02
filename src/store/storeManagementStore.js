@@ -1,11 +1,36 @@
 import { create } from 'zustand';
-import { MOCK_INVENTORY, MOCK_SOLD_ITEMS } from '../services/mockData';
+import { inventoryService } from '../services/inventoryService';
 
+/**
+ * StoreManagementStore — manages inventory and sold items state.
+ * 
+ * ARCHITECTURE: Screen → Store → Service → Data Source
+ * This store NEVER imports mockData directly. All data flows through inventoryService.
+ * Business logic (sold-item creation, ID generation) lives in the service.
+ */
 export const useStoreManagementStore = create((set, get) => ({
-    inventory: [...MOCK_INVENTORY],
-    soldItems: [...MOCK_SOLD_ITEMS],
+    inventory: [],
+    soldItems: [],
     searchQuery: '',
     filterCategory: 'all',
+    isLoading: false,
+
+    /**
+     * Initialize inventory data from the service layer.
+     */
+    init: async () => {
+        set({ isLoading: true });
+        try {
+            const [inventory, soldItems] = await Promise.all([
+                inventoryService.getInventory(),
+                inventoryService.getSoldItems(),
+            ]);
+            set({ inventory, soldItems, isLoading: false });
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Failed to initialize store management:', error);
+        }
+    },
 
     getFilteredInventory: () => {
         const { inventory, searchQuery, filterCategory } = get();
@@ -26,13 +51,35 @@ export const useStoreManagementStore = create((set, get) => ({
     setSearchQuery: (query) => set({ searchQuery: query }),
     setFilterCategory: (category) => set({ filterCategory: category }),
 
-    addInventoryItem: (item) => set((state) => ({
-        inventory: [...state.inventory, { ...item, id: `inv${state.inventory.length + 1}` }],
-    })),
+    addInventoryItem: async (item) => {
+        set({ isLoading: true });
+        try {
+            const newItem = await inventoryService.addInventoryItem(item);
+            set((state) => ({
+                inventory: [...state.inventory, newItem],
+                isLoading: false,
+            }));
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Add inventory item failed:', error);
+            throw error;
+        }
+    },
 
-    updateInventoryItem: (id, updates) => set((state) => ({
-        inventory: state.inventory.map(i => i.id === id ? { ...i, ...updates } : i),
-    })),
+    updateInventoryItem: async (id, updates) => {
+        set({ isLoading: true });
+        try {
+            await inventoryService.updateInventoryItem(id, updates);
+            set((state) => ({
+                inventory: state.inventory.map(i => i.id === id ? { ...i, ...updates } : i),
+                isLoading: false,
+            }));
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Update inventory item failed:', error);
+            throw error;
+        }
+    },
 
     updateQuantity: (id, change) => set((state) => ({
         inventory: state.inventory.map(i => {
@@ -47,31 +94,35 @@ export const useStoreManagementStore = create((set, get) => ({
         }),
     })),
 
-    markAsSold: (id, customerName) => set((state) => {
+    markAsSold: async (id, customerName) => {
+        const state = get();
         const item = state.inventory.find(i => i.id === id);
-        if (!item || item.quantity === 0) return state;
-        const soldItem = {
-            id: `sold${state.soldItems.length + 1}`,
-            name: item.name,
-            category: item.category,
-            price: item.price,
-            soldDate: new Date().toISOString().split('T')[0],
-            customer: customerName || 'Walk-in Customer',
-        };
-        return {
-            soldItems: [soldItem, ...state.soldItems],
-            inventory: state.inventory.map(i => {
-                if (i.id === id) {
-                    const newQty = i.quantity - 1;
-                    let status = 'in_stock';
-                    if (newQty === 0) status = 'out_of_stock';
-                    else if (newQty <= 2) status = 'low_stock';
-                    return { ...i, quantity: newQty, status };
-                }
-                return i;
-            }),
-        };
-    }),
+        if (!item || item.quantity === 0) return;
+
+        set({ isLoading: true });
+        try {
+            // Service creates the sold-item record (ID, timestamp, etc.)
+            const soldItem = await inventoryService.markAsSold(item, customerName);
+            set((state) => ({
+                soldItems: [soldItem, ...state.soldItems],
+                inventory: state.inventory.map(i => {
+                    if (i.id === id) {
+                        const newQty = i.quantity - 1;
+                        let status = 'in_stock';
+                        if (newQty === 0) status = 'out_of_stock';
+                        else if (newQty <= 2) status = 'low_stock';
+                        return { ...i, quantity: newQty, status };
+                    }
+                    return i;
+                }),
+                isLoading: false,
+            }));
+        } catch (error) {
+            set({ isLoading: false });
+            console.error('Mark as sold failed:', error);
+            throw error;
+        }
+    },
 
     getCategories: () => {
         const { inventory } = get();

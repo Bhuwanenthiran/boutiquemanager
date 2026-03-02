@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useOrderStore } from '../../store/orderStore';
 import { StatusBadge, Card, Divider } from '../../components/common';
+import { formatDate } from '../../services/dateUtils';
 
 const OrderDetailScreen = ({ route, navigation }) => {
     const { orderId } = route.params;
@@ -46,7 +47,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
                 {/* Status Banner */}
                 <View style={styles.statusBanner}>
                     <StatusBadge status={order.status} />
-                    <Text style={styles.dateLabel}>Created {order.createdAt}</Text>
+                    <Text style={styles.dateLabel}>Created {formatDate(order.createdAt)}</Text>
                 </View>
 
                 {/* Customer Info */}
@@ -181,7 +182,7 @@ const OrderDetailScreen = ({ route, navigation }) => {
                     <Ionicons name="calendar-outline" size={20} color={COLORS.primary} />
                     <View style={{ marginLeft: SIZES.md, flex: 1 }}>
                         <Text style={styles.deliveryLabel}>Delivery Date</Text>
-                        <Text style={styles.deliveryDate}>{order.deliveryDate}</Text>
+                        <Text style={styles.deliveryDate}>{formatDate(order.deliveryDate)}</Text>
                     </View>
                 </Card>
 

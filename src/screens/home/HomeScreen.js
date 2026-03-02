@@ -1,12 +1,12 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
 import { useProductionStore } from '../../store/productionStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, StatusBadge } from '../../components/common';
+import { Card, StatusBadge, LoadingOverlay } from '../../components/common';
 
 const { width } = Dimensions.get('window');
 
@@ -14,8 +14,22 @@ const HomeScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
     const orders = useOrderStore((s) => s.orders);
+    const fetchOrders = useOrderStore((s) => s.fetchOrders);
+    const isLoading = useOrderStore((s) => s.isLoading);
     const productionOrders = useProductionStore((s) => s.productionOrders);
+    const initProduction = useProductionStore((s) => s.init);
     const inventory = useStoreManagementStore((s) => s.inventory);
+
+    const onRefresh = React.useCallback(async () => {
+        try {
+            await Promise.all([
+                fetchOrders(),
+                initProduction()
+            ]);
+        } catch (error) {
+            console.error('Refresh failed:', error);
+        }
+    }, [fetchOrders, initProduction]);
 
     const pendingOrders = orders.filter(o => o.status === 'Pending').length;
     const inProduction = orders.filter(o => ['In Production', 'Marking', 'Cutting'].includes(o.status)).length;
@@ -44,14 +58,24 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: C.bg }]}>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <LoadingOverlay visible={isLoading && orders.length === 0} message="Loading dashboard..." />
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />
+                }
+            >
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
                         <Text style={[styles.greeting, { color: C.textMuted }]}>Welcome back</Text>
                         <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
                     </View>
-                    <TouchableOpacity style={[styles.notifBtn, { backgroundColor: C.bgCard }]}>
+                    <TouchableOpacity
+                        style={[styles.notifBtn, { backgroundColor: C.bgCard }]}
+                        disabled={isLoading}
+                    >
                         <Ionicons name="notifications-outline" size={22} color={C.textPrimary} />
                         <View style={[styles.notifDot, { borderColor: C.bgCard }]} />
                     </TouchableOpacity>
@@ -116,6 +140,7 @@ const HomeScreen = ({ navigation }) => {
                             style={[styles.actionCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
                             onPress={() => navigation.navigate(action.screen)}
                             activeOpacity={0.7}
+                            disabled={isLoading}
                         >
                             <View style={[styles.actionIcon, { backgroundColor: action.color + '18' }]}>
                                 <Ionicons name={action.icon} size={24} color={action.color} />
@@ -131,6 +156,7 @@ const HomeScreen = ({ navigation }) => {
                         style={[styles.alertCard, { backgroundColor: C.warningLight, borderColor: C.warning + '30' }]}
                         onPress={() => navigation.navigate('StoreManagement')}
                         activeOpacity={0.8}
+                        disabled={isLoading}
                     >
                         <View style={[styles.alertIconWrap, { backgroundColor: C.warning + '20' }]}>
                             <Ionicons name="warning-outline" size={20} color={C.warning} />
@@ -146,7 +172,10 @@ const HomeScreen = ({ navigation }) => {
                 {/* Recent Orders */}
                 <View style={styles.sectionRow}>
                     <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent Orders</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('OrdersTab')}>
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('OrdersTab')}
+                        disabled={isLoading}
+                    >
                         <Text style={[styles.seeAll, { color: C.primary }]}>See All</Text>
                     </TouchableOpacity>
                 </View>
@@ -156,6 +185,7 @@ const HomeScreen = ({ navigation }) => {
                         key={order.id}
                         style={styles.recentOrderCard}
                         onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+                        disabled={isLoading}
                     >
                         <View style={styles.orderTop}>
                             <View>

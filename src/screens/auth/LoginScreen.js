@@ -54,6 +54,7 @@ const LoginScreen = () => {
                         keyboardType="email-address"
                         autoCapitalize="none"
                         icon="mail-outline"
+                        editable={!isLoading}
                     />
                     <FormInput
                         label="Password"
@@ -62,9 +63,10 @@ const LoginScreen = () => {
                         placeholder="••••••••"
                         secureTextEntry
                         icon="lock-closed-outline"
+                        editable={!isLoading}
                     />
 
-                    <TouchableOpacity style={styles.forgotPass}>
+                    <TouchableOpacity style={styles.forgotPass} disabled={isLoading}>
                         <Text style={[styles.forgotPassText, { color: C.primary }]}>Forgot Password?</Text>
                     </TouchableOpacity>
 
@@ -87,12 +89,14 @@ const LoginScreen = () => {
                             <TouchableOpacity
                                 style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
                                 onPress={() => { setEmail('admin@atelier.com'); setPassword('admin123'); }}
+                                disabled={isLoading}
                             >
                                 <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Admin Login</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
                                 onPress={() => { setEmail('staff@atelier.com'); setPassword('staff123'); }}
+                                disabled={isLoading}
                             >
                                 <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Staff Login</Text>
                             </TouchableOpacity>

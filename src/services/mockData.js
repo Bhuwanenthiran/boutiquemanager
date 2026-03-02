@@ -1,5 +1,6 @@
 // Mock Data for Boutique Management System
 import uuid from 'react-native-uuid';
+import { toEpoch } from './dateUtils';
 
 const generateId = () => uuid.v4();
 
@@ -46,6 +47,7 @@ export const MEASUREMENT_FIELDS = {
 };
 
 // ===== ORDERS =====
+// All date fields are stored as numeric epoch (ms) for Firestore compatibility
 export const MOCK_ORDERS = [
     {
         id: 'ORD001',
@@ -55,14 +57,14 @@ export const MOCK_ORDERS = [
         designName: 'Bridal Lehenga',
         category: 'Bridal',
         measurements: { Shoulder: '14', Bust: '36', Waist: '30', Hip: '38', Length: '42', 'Sleeve Length': '18', Armhole: '16', Flare: '6', 'Train Length': '12' },
-        deliveryDate: '2026-03-15',
+        deliveryDate: toEpoch('2026-03-15'),
         totalAmount: 45000,
         advanceAmount: 20000,
         balanceAmount: 25000,
         status: 'In Production',
         priority: 'high',
         notes: 'Customer wants gold zardozi work on border',
-        createdAt: '2026-02-10',
+        createdAt: toEpoch('2026-02-10'),
         tailorId: 't1',
         tailorName: 'Ramu Master',
         productionStage: 'stitching',
@@ -76,14 +78,14 @@ export const MOCK_ORDERS = [
         designName: 'Silk Saree Blouse',
         category: 'Blouse',
         measurements: { Shoulder: '13.5', Bust: '34', Waist: '28', Hip: '36', 'Sleeve Length': '10', 'Sleeve Round': '12', 'Back Neck': '7', 'Front Neck': '8', 'Blouse Length': '15', Armhole: '15' },
-        deliveryDate: '2026-02-28',
+        deliveryDate: toEpoch('2026-02-28'),
         totalAmount: 3500,
         advanceAmount: 2000,
         balanceAmount: 1500,
         status: 'Ready',
         priority: 'medium',
         notes: 'Maggam work on sleeves',
-        createdAt: '2026-02-05',
+        createdAt: toEpoch('2026-02-05'),
         tailorId: 't2',
         tailorName: 'Lakshmi Tailor',
         productionStage: 'completed',
@@ -97,14 +99,14 @@ export const MOCK_ORDERS = [
         designName: 'Classic Anarkali',
         category: 'Anarkali',
         measurements: { Shoulder: '14', Bust: '35', Waist: '29', Hip: '37', Length: '50', 'Sleeve Length': '22', Armhole: '15.5', Flare: '8' },
-        deliveryDate: '2026-03-05',
+        deliveryDate: toEpoch('2026-03-05'),
         totalAmount: 12000,
         advanceAmount: 5000,
         balanceAmount: 7000,
         status: 'Marking',
         priority: 'medium',
         notes: 'Pastel pink fabric chosen',
-        createdAt: '2026-02-12',
+        createdAt: toEpoch('2026-02-12'),
         tailorId: 't3',
         tailorName: 'Karthik Designer',
         productionStage: 'marking',
@@ -118,14 +120,14 @@ export const MOCK_ORDERS = [
         designName: 'Salwar Kameez',
         category: 'Salwar',
         measurements: { Waist: '28', Hip: '36', Length: '38', Bottom: '7', Knee: '14', Thigh: '20' },
-        deliveryDate: '2026-03-10',
+        deliveryDate: toEpoch('2026-03-10'),
         totalAmount: 5500,
         advanceAmount: 3000,
         balanceAmount: 2500,
         status: 'Cutting',
         priority: 'low',
         notes: 'Georgette fabric, simple design',
-        createdAt: '2026-02-14',
+        createdAt: toEpoch('2026-02-14'),
         tailorId: 't4',
         tailorName: 'Vimala Stitcher',
         productionStage: 'cutting',
@@ -139,14 +141,14 @@ export const MOCK_ORDERS = [
         designName: 'Aari Work Blouse',
         category: 'Blouse',
         measurements: { Shoulder: '14', Bust: '36', Waist: '30', Hip: '38', 'Sleeve Length': '12', 'Sleeve Round': '13', 'Back Neck': '7.5', 'Front Neck': '8.5', 'Blouse Length': '16', Armhole: '16' },
-        deliveryDate: '2026-03-20',
+        deliveryDate: toEpoch('2026-03-20'),
         totalAmount: 8000,
         advanceAmount: 4000,
         balanceAmount: 4000,
         status: 'Pending',
         priority: 'high',
         notes: 'Heavy aari work with stones',
-        createdAt: '2026-02-16',
+        createdAt: toEpoch('2026-02-16'),
         tailorId: 't5',
         tailorName: 'Senthil Master',
         productionStage: 'pending',
@@ -157,14 +159,14 @@ export const MOCK_ORDERS = [
 // ===== PRODUCTION STAGES =====
 export const PRODUCTION_STAGES = {
     ORD001: {
-        production1: { status: 'completed', startedAt: '2026-02-11', completedAt: '2026-02-13', notes: 'Base stitching done' },
-        production2: { status: 'in_progress', startedAt: '2026-02-14', completedAt: null, notes: 'Zardozi work ongoing' },
+        production1: { status: 'completed', startedAt: toEpoch('2026-02-11'), completedAt: toEpoch('2026-02-13'), notes: 'Base stitching done' },
+        production2: { status: 'in_progress', startedAt: toEpoch('2026-02-14'), completedAt: null, notes: 'Zardozi work ongoing' },
         production3: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
     },
     ORD002: {
-        production1: { status: 'completed', startedAt: '2026-02-06', completedAt: '2026-02-07', notes: 'Stitching complete' },
-        production2: { status: 'completed', startedAt: '2026-02-08', completedAt: '2026-02-10', notes: 'Maggam work done' },
-        production3: { status: 'completed', startedAt: '2026-02-11', completedAt: '2026-02-12', notes: 'Lining and hooks added' },
+        production1: { status: 'completed', startedAt: toEpoch('2026-02-06'), completedAt: toEpoch('2026-02-07'), notes: 'Stitching complete' },
+        production2: { status: 'completed', startedAt: toEpoch('2026-02-08'), completedAt: toEpoch('2026-02-10'), notes: 'Maggam work done' },
+        production3: { status: 'completed', startedAt: toEpoch('2026-02-11'), completedAt: toEpoch('2026-02-12'), notes: 'Lining and hooks added' },
     },
     ORD003: {
         production1: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
@@ -181,7 +183,7 @@ export const MOCK_FINISHING = {
         threadCutting: true,
         qualityApproval: true,
         approvedBy: 'Manager',
-        approvedAt: '2026-02-13',
+        approvedAt: toEpoch('2026-02-13'),
         isReady: true,
     },
     ORD001: {
@@ -213,22 +215,22 @@ export const MOCK_INVENTORY = [
 ];
 
 export const MOCK_SOLD_ITEMS = [
-    { id: 'sold1', name: 'Silk Saree Blouse', category: 'Blouse', price: 3500, soldDate: '2026-02-13', customer: 'Ananya Reddy' },
-    { id: 'sold2', name: 'Party Gown - Black', category: 'Gown', price: 15000, soldDate: '2026-02-10', customer: 'Walk-in Customer' },
-    { id: 'sold3', name: 'Cotton Kurti Set', category: 'Kurti', price: 2200, soldDate: '2026-02-08', customer: 'Online Order' },
+    { id: 'sold1', name: 'Silk Saree Blouse', category: 'Blouse', price: 3500, soldDate: toEpoch('2026-02-13'), customer: 'Ananya Reddy' },
+    { id: 'sold2', name: 'Party Gown - Black', category: 'Gown', price: 15000, soldDate: toEpoch('2026-02-10'), customer: 'Walk-in Customer' },
+    { id: 'sold3', name: 'Cotton Kurti Set', category: 'Kurti', price: 2200, soldDate: toEpoch('2026-02-08'), customer: 'Online Order' },
 ];
 
 // ===== CATALOGUE / SPECIAL RECORDS =====
 export const MOCK_HOLD_ORDERS = [
-    { id: 'hold1', orderId: 'ORD006', customerName: 'Sita Devi', designName: 'Pattu Pavadai', reason: 'Awaiting fabric delivery', holdDate: '2026-02-15', status: 'on_hold' },
-    { id: 'hold2', orderId: 'ORD007', customerName: 'Radha Krishnan', designName: 'Wedding Saree Blouse', reason: 'Customer requested delay', holdDate: '2026-02-14', status: 'on_hold' },
+    { id: 'hold1', orderId: 'ORD006', customerName: 'Sita Devi', designName: 'Pattu Pavadai', reason: 'Awaiting fabric delivery', holdDate: toEpoch('2026-02-15'), status: 'on_hold' },
+    { id: 'hold2', orderId: 'ORD007', customerName: 'Radha Krishnan', designName: 'Wedding Saree Blouse', reason: 'Customer requested delay', holdDate: toEpoch('2026-02-14'), status: 'on_hold' },
 ];
 
 export const MOCK_CANCELLED_ORDERS = [
-    { id: 'can1', orderId: 'ORD008', customerName: 'Lakshmi G', designName: 'Simple Salwar', reason: 'Changed mind', cancelledDate: '2026-02-12', refundAmount: 2000, refunded: true },
+    { id: 'can1', orderId: 'ORD008', customerName: 'Lakshmi G', designName: 'Simple Salwar', reason: 'Changed mind', cancelledDate: toEpoch('2026-02-12'), refundAmount: 2000, refunded: true },
 ];
 
 export const MOCK_ALTERATIONS = [
-    { id: 'alt1', orderId: 'ORD002', customerName: 'Ananya Reddy', item: 'Silk Saree Blouse', type: 'Sleeve adjustment', status: 'completed', date: '2026-02-14', notes: 'Sleeve shortened by 1 inch' },
-    { id: 'alt2', orderId: 'ORD009', customerName: 'Walk-in', item: 'Lehenga', type: 'Waist alteration', status: 'in_progress', date: '2026-02-16', notes: 'Waist taken in 2 inches' },
+    { id: 'alt1', orderId: 'ORD002', customerName: 'Ananya Reddy', item: 'Silk Saree Blouse', type: 'Sleeve adjustment', status: 'completed', date: toEpoch('2026-02-14'), notes: 'Sleeve shortened by 1 inch' },
+    { id: 'alt2', orderId: 'ORD009', customerName: 'Walk-in', item: 'Lehenga', type: 'Waist alteration', status: 'in_progress', date: toEpoch('2026-02-16'), notes: 'Waist taken in 2 inches' },
 ];

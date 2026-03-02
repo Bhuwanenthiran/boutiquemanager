@@ -3,8 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { Card } from '../../components/common';
+import { Card, LoadingOverlay } from '../../components/common';
 import { FormInput, FormButton } from '../../components/forms';
+import { formatDate } from '../../services/dateUtils';
 
 const STAGES = [
     { key: 'production1', label: 'Production 1', subtitle: 'Base Stitching', icon: 'construct-outline', color: COLORS.slate },
@@ -16,6 +17,9 @@ const WorkProductionScreen = ({ navigation }) => {
     const productionOrders = useProductionStore((s) => s.productionOrders);
     const productionStages = useProductionStore((s) => s.productionStages);
     const updateStage = useProductionStore((s) => s.updateStage);
+    const startStage = useProductionStore((s) => s.startStage);
+    const completeStage = useProductionStore((s) => s.completeStage);
+    const isLoading = useProductionStore((s) => s.isLoading);
     const [selectedOrder, setSelectedOrder] = useState(productionOrders[0]?.id || null);
     const [expandedStage, setExpandedStage] = useState(null);
 
@@ -23,17 +27,24 @@ const WorkProductionScreen = ({ navigation }) => {
 
     const getStageData = (key) => currentStages[key] || { status: 'pending', startedAt: null, completedAt: null, notes: '' };
 
-    const handleStageAction = (stageKey, action) => {
-        const now = new Date().toISOString().split('T')[0];
-        if (action === 'start') {
-            updateStage(selectedOrder, stageKey, { status: 'in_progress', startedAt: now });
-        } else if (action === 'complete') {
-            updateStage(selectedOrder, stageKey, { status: 'completed', completedAt: now });
+    const handleStageAction = async (stageKey, action) => {
+        try {
+            if (action === 'start') {
+                await startStage(selectedOrder, stageKey);
+            } else if (action === 'complete') {
+                await completeStage(selectedOrder, stageKey);
+            }
+        } catch (error) {
+            // Handled in store
         }
     };
 
-    const handleNotesUpdate = (stageKey, notes) => {
-        updateStage(selectedOrder, stageKey, { notes });
+    const handleNotesUpdate = async (stageKey, notes) => {
+        try {
+            await updateStage(selectedOrder, stageKey, { notes });
+        } catch (error) {
+            // Handled in store
+        }
     };
 
     const getCompletionPercent = () => {
@@ -46,8 +57,9 @@ const WorkProductionScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <LoadingOverlay visible={isLoading} message="Processing..." />
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
                     <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Work Production</Text>
@@ -55,12 +67,18 @@ const WorkProductionScreen = ({ navigation }) => {
             </View>
 
             {/* Order Selector */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.orderTabs}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.orderTabs}
+                keyboardShouldPersistTaps="handled"
+            >
                 {productionOrders.map(order => (
                     <TouchableOpacity
                         key={order.id}
                         style={[styles.orderTab, selectedOrder === order.id && styles.orderTabActive]}
                         onPress={() => setSelectedOrder(order.id)}
+                        disabled={isLoading}
                     >
                         <Text style={[styles.orderTabId, selectedOrder === order.id && styles.orderTabIdActive]}>{order.id}</Text>
                         <Text style={[styles.orderTabName, selectedOrder === order.id && styles.orderTabNameActive]} numberOfLines={1}>
@@ -81,7 +99,11 @@ const WorkProductionScreen = ({ navigation }) => {
                 </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.stagesContent}>
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.stagesContent}
+                keyboardShouldPersistTaps="handled"
+            >
                 {/* Stepper */}
                 {STAGES.map((stage, idx) => {
                     const data = getStageData(stage.key);
@@ -104,6 +126,7 @@ const WorkProductionScreen = ({ navigation }) => {
                             <TouchableOpacity
                                 activeOpacity={0.7}
                                 onPress={() => setExpandedStage(isExpanded ? null : stage.key)}
+                                disabled={isLoading}
                             >
                                 <Card elevated style={[
                                     styles.stageCard,
@@ -150,13 +173,13 @@ const WorkProductionScreen = ({ navigation }) => {
                                                 {data.startedAt && (
                                                     <View style={styles.dateItem}>
                                                         <Ionicons name="play-circle-outline" size={14} color={COLORS.success} />
-                                                        <Text style={styles.dateText}>Started: {data.startedAt}</Text>
+                                                        <Text style={styles.dateText}>Started: {formatDate(data.startedAt)}</Text>
                                                     </View>
                                                 )}
                                                 {data.completedAt && (
                                                     <View style={styles.dateItem}>
                                                         <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.success} />
-                                                        <Text style={styles.dateText}>Completed: {data.completedAt}</Text>
+                                                        <Text style={styles.dateText}>Completed: {formatDate(data.completedAt)}</Text>
                                                     </View>
                                                 )}
                                             </View>
@@ -169,10 +192,11 @@ const WorkProductionScreen = ({ navigation }) => {
                                                 placeholder="Add production notes..."
                                                 multiline
                                                 icon="document-text-outline"
+                                                editable={!isLoading}
                                             />
 
                                             {/* Image Upload Placeholder */}
-                                            <TouchableOpacity style={styles.uploadArea}>
+                                            <TouchableOpacity style={styles.uploadArea} disabled={isLoading}>
                                                 <Ionicons name="camera-outline" size={24} color={COLORS.textMuted} />
                                                 <Text style={styles.uploadText}>Upload Work Progress</Text>
                                                 <Text style={styles.uploadHint}>Tap to add photos</Text>
@@ -185,6 +209,7 @@ const WorkProductionScreen = ({ navigation }) => {
                                                         title="Start Production"
                                                         icon="play-outline"
                                                         onPress={() => handleStageAction(stage.key, 'start')}
+                                                        loading={isLoading}
                                                     />
                                                 )}
                                                 {isInProgress && (
@@ -192,6 +217,7 @@ const WorkProductionScreen = ({ navigation }) => {
                                                         title="Mark Complete"
                                                         icon="checkmark-outline"
                                                         onPress={() => handleStageAction(stage.key, 'complete')}
+                                                        loading={isLoading}
                                                     />
                                                 )}
                                             </View>

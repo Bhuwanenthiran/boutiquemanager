@@ -3,8 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from '
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { StatusBadge, Card, SectionHeader, EmptyState } from '../../components/common';
+import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
+import { formatTimer, now } from '../../services/dateUtils';
 
 const StitchingProductionScreen = ({ navigation }) => {
     const productionOrders = useProductionStore((s) => s.productionOrders);
@@ -16,6 +17,8 @@ const StitchingProductionScreen = ({ navigation }) => {
     const stopTimer = useProductionStore((s) => s.stopTimer);
     const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
     const getFilteredProduction = useProductionStore((s) => s.getFilteredProduction);
+    const isLoading = useProductionStore((s) => s.isLoading);
+    const init = useProductionStore((s) => s.init);
 
     const [timerValues, setTimerValues] = useState({});
     const intervalRef = useRef(null);
@@ -24,11 +27,7 @@ const StitchingProductionScreen = ({ navigation }) => {
         intervalRef.current = setInterval(() => {
             const newTimerValues = {};
             Object.entries(activeTimers).forEach(([orderId, startTime]) => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const hrs = Math.floor(elapsed / 3600);
-                const mins = Math.floor((elapsed % 3600) / 60);
-                const secs = elapsed % 60;
-                newTimerValues[orderId] = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                newTimerValues[orderId] = formatTimer(now() - startTime);
             });
             setTimerValues(newTimerValues);
         }, 1000);
@@ -36,6 +35,10 @@ const StitchingProductionScreen = ({ navigation }) => {
     }, [activeTimers]);
 
     const filteredOrders = getFilteredProduction();
+
+    const onRefresh = async () => {
+        await init();
+    };
 
     const getStageIcon = (stage) => {
         switch (stage) {
@@ -58,11 +61,18 @@ const StitchingProductionScreen = ({ navigation }) => {
 
     const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
 
-    const cycleStatus = (orderId, currentStatus) => {
+    const cycleStatus = async (orderId, currentStatus) => {
         const idx = statusActions.indexOf(currentStatus);
         const nextIdx = (idx + 1) % statusActions.length;
-        updateProductionStatus(orderId, 'status', statusActions[nextIdx]);
-        updateProductionStatus(orderId, 'productionStage', statusActions[nextIdx].toLowerCase().replace(/\s/g, '_'));
+        const nextStatus = statusActions[nextIdx];
+        const nextStage = nextStatus.toLowerCase().replace(/\s/g, '_');
+
+        try {
+            await updateProductionStatus(orderId, 'status', nextStatus);
+            await updateProductionStatus(orderId, 'productionStage', nextStage);
+        } catch (error) {
+            // Error handled in store
+        }
     };
 
     const renderOrderCard = ({ item }) => {
@@ -127,6 +137,7 @@ const StitchingProductionScreen = ({ navigation }) => {
                     <TouchableOpacity
                         style={[styles.timerBtn, isTimerActive && styles.timerBtnActive]}
                         onPress={() => isTimerActive ? stopTimer(item.id) : startTimer(item.id)}
+                        disabled={isLoading}
                     >
                         <Ionicons
                             name={isTimerActive ? 'pause' : 'play'}
@@ -142,6 +153,7 @@ const StitchingProductionScreen = ({ navigation }) => {
                     <TouchableOpacity
                         style={styles.statusCycleBtn}
                         onPress={() => cycleStatus(item.id, item.status)}
+                        disabled={isLoading}
                     >
                         <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
                         <Text style={styles.statusCycleText}>Next Stage</Text>
@@ -153,6 +165,7 @@ const StitchingProductionScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
+            <LoadingOverlay visible={isLoading && productionOrders.length > 0} message="Updating status..." />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Production</Text>
                 <Text style={styles.headerSubtitle}>{productionOrders.length} active orders</Text>
@@ -164,19 +177,30 @@ const StitchingProductionScreen = ({ navigation }) => {
                 showsHorizontalScrollIndicator={false}
                 style={{ flexGrow: 0, marginBottom: 12 }}
                 contentContainerStyle={styles.filtersRow}
+                keyboardShouldPersistTaps="handled"
             >
-                <FilterChip label="All Tailors" active={filterTailor === 'all'} onPress={() => setFilterTailor('all')} />
+                <FilterChip
+                    label="All Tailors"
+                    active={filterTailor === 'all'}
+                    onPress={() => setFilterTailor('all')}
+                    disabled={isLoading}
+                />
                 {tailors.map(t => (
                     <FilterChip
                         key={t.id}
                         label={t.name}
                         active={filterTailor === t.id}
                         onPress={() => setFilterTailor(t.id)}
+                        disabled={isLoading}
                     />
                 ))}
             </ScrollView>
 
-            {filteredOrders.length === 0 ? (
+            {isLoading && productionOrders.length === 0 ? (
+                <View style={{ flex: 1, padding: SIZES.lg }}>
+                    <Text style={{ color: COLORS.textMuted, textAlign: 'center' }}>Loading production...</Text>
+                </View>
+            ) : filteredOrders.length === 0 ? (
                 <EmptyState
                     icon="construct-outline"
                     title="No production orders"
@@ -190,6 +214,8 @@ const StitchingProductionScreen = ({ navigation }) => {
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
                     style={{ flex: 1 }}
+                    refreshing={isLoading}
+                    onRefresh={onRefresh}
                 />
             )}
         </View>

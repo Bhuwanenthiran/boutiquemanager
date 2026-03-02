@@ -4,6 +4,7 @@ import { StatusBar, View, Platform, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
+import AppInitializer from './src/components/AppInitializer';
 import { getColors } from './src/theme';
 import { useThemeStore } from './src/store/themeStore';
 
@@ -20,7 +21,9 @@ export default function App() {
                         backgroundColor={C.bg}
                         translucent
                     />
-                    <AppNavigator />
+                    <AppInitializer>
+                        <AppNavigator />
+                    </AppInitializer>
                 </GestureHandlerRootView>
             </SafeAreaProvider>
         </View>
