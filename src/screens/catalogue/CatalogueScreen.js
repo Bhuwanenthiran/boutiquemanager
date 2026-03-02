@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, Modal, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useCatalogueStore } from '../../store/catalogueStore';
@@ -12,6 +12,122 @@ const TABS = [
     { key: 'cancelled', label: 'Cancelled', icon: 'close-circle-outline' },
     { key: 'alteration', label: 'Alterations', icon: 'build-outline' },
 ];
+
+const HoldItem = React.memo(({ item, onConfirm, isLoading }) => (
+    <Card elevated style={styles.catalogueCard}>
+        <View style={styles.cardRow}>
+            <View style={[styles.cardIconWrap, { backgroundColor: COLORS.warningLight }]}>
+                <Ionicons name="pause-circle-outline" size={22} color={COLORS.warning} />
+            </View>
+            <View style={{ flex: 1, marginLeft: SIZES.md }}>
+                <Text style={styles.cardTitle}>{item.customerName}</Text>
+                <Text style={styles.cardSubtitle}>{item.designName}</Text>
+                <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.holdDate)}</Text>
+            </View>
+        </View>
+        <View style={styles.reasonWrap}>
+            <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
+            <Text style={styles.reasonText}>{item.reason}</Text>
+        </View>
+        <View style={styles.cardActions}>
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => onConfirm('restore', item)}
+                disabled={isLoading}
+            >
+                <Ionicons name="refresh-outline" size={16} color={COLORS.success} />
+                <Text style={[styles.actionText, { color: COLORS.success }]}>Restore</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => onConfirm('delete_hold', item)}
+                disabled={isLoading}
+            >
+                <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
+            </TouchableOpacity>
+        </View>
+    </Card>
+));
+
+const CancelledItem = React.memo(({ item, onConfirm, isLoading }) => (
+    <Card elevated style={styles.catalogueCard}>
+        <View style={styles.cardRow}>
+            <View style={[styles.cardIconWrap, { backgroundColor: COLORS.errorLight }]}>
+                <Ionicons name="close-circle-outline" size={22} color={COLORS.error} />
+            </View>
+            <View style={{ flex: 1, marginLeft: SIZES.md }}>
+                <Text style={styles.cardTitle}>{item.customerName}</Text>
+                <Text style={styles.cardSubtitle}>{item.designName}</Text>
+                <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.cancelledDate)}</Text>
+            </View>
+        </View>
+        <View style={styles.reasonWrap}>
+            <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
+            <Text style={styles.reasonText}>Reason: {item.reason}</Text>
+        </View>
+        <View style={styles.refundBar}>
+            <Text style={styles.refundLabel}>Refund: ₹{item.refundAmount?.toLocaleString('en-IN') || '0'}</Text>
+            <View style={[styles.refundBadge, { backgroundColor: item.refunded ? COLORS.successLight : COLORS.warningLight }]}>
+                <Text style={[styles.refundBadgeText, { color: item.refunded ? COLORS.success : COLORS.warning }]}>
+                    {item.refunded ? 'Refunded' : 'Pending'}
+                </Text>
+            </View>
+        </View>
+        <View style={styles.cardActions}>
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => onConfirm('delete_cancelled', item)}
+                disabled={isLoading}
+            >
+                <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
+            </TouchableOpacity>
+        </View>
+    </Card>
+));
+
+const AlterationItem = React.memo(({ item, onConfirm, isLoading }) => (
+    <Card elevated style={styles.catalogueCard}>
+        <View style={styles.cardRow}>
+            <View style={[styles.cardIconWrap, { backgroundColor: COLORS.slateLight }]}>
+                <Ionicons name="build-outline" size={22} color={COLORS.slate} />
+            </View>
+            <View style={{ flex: 1, marginLeft: SIZES.md }}>
+                <Text style={styles.cardTitle}>{item.customerName}</Text>
+                <Text style={styles.cardSubtitle}>{item.item} — {item.type}</Text>
+                <Text style={styles.cardMeta}>{formatDate(item.date)}</Text>
+            </View>
+            <StatusBadge status={item.status} size="small" />
+        </View>
+        {item.notes && (
+            <View style={styles.reasonWrap}>
+                <Ionicons name="document-text-outline" size={14} color={COLORS.textMuted} />
+                <Text style={styles.reasonText}>{item.notes}</Text>
+            </View>
+        )}
+        <View style={styles.cardActions}>
+            {item.status !== 'completed' && (
+                <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => onConfirm('complete_alteration', item)}
+                    disabled={isLoading}
+                >
+                    <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.success} />
+                    <Text style={[styles.actionText, { color: COLORS.success }]}>Complete</Text>
+                </TouchableOpacity>
+            )}
+            <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => onConfirm('delete_alteration', item)}
+                disabled={isLoading}
+            >
+                <Ionicons name="trash-outline" size={16} color={COLORS.error} />
+                <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
+            </TouchableOpacity>
+        </View>
+    </Card>
+));
 
 const CatalogueScreen = ({ navigation }) => {
     const activeTab = useCatalogueStore((s) => s.activeTab);
@@ -58,119 +174,15 @@ const CatalogueScreen = ({ navigation }) => {
     };
 
     const renderHoldItem = ({ item }) => (
-        <Card elevated style={styles.catalogueCard}>
-            <View style={styles.cardRow}>
-                <View style={[styles.cardIconWrap, { backgroundColor: COLORS.warningLight }]}>
-                    <Ionicons name="pause-circle-outline" size={22} color={COLORS.warning} />
-                </View>
-                <View style={{ flex: 1, marginLeft: SIZES.md }}>
-                    <Text style={styles.cardTitle}>{item.customerName}</Text>
-                    <Text style={styles.cardSubtitle}>{item.designName}</Text>
-                    <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.holdDate)}</Text>
-                </View>
-            </View>
-            <View style={styles.reasonWrap}>
-                <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
-                <Text style={styles.reasonText}>{item.reason}</Text>
-            </View>
-            <View style={styles.cardActions}>
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => confirmAction('restore', item)}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="refresh-outline" size={16} color={COLORS.success} />
-                    <Text style={[styles.actionText, { color: COLORS.success }]}>Restore</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => confirmAction('delete_hold', item)}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-                    <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
-                </TouchableOpacity>
-            </View>
-        </Card>
+        <HoldItem item={item} onConfirm={confirmAction} isLoading={isLoading} />
     );
 
     const renderCancelledItem = ({ item }) => (
-        <Card elevated style={styles.catalogueCard}>
-            <View style={styles.cardRow}>
-                <View style={[styles.cardIconWrap, { backgroundColor: COLORS.errorLight }]}>
-                    <Ionicons name="close-circle-outline" size={22} color={COLORS.error} />
-                </View>
-                <View style={{ flex: 1, marginLeft: SIZES.md }}>
-                    <Text style={styles.cardTitle}>{item.customerName}</Text>
-                    <Text style={styles.cardSubtitle}>{item.designName}</Text>
-                    <Text style={styles.cardMeta}>Order: {item.orderId} • {formatDate(item.cancelledDate)}</Text>
-                </View>
-            </View>
-            <View style={styles.reasonWrap}>
-                <Ionicons name="information-circle-outline" size={14} color={COLORS.textMuted} />
-                <Text style={styles.reasonText}>Reason: {item.reason}</Text>
-            </View>
-            <View style={styles.refundBar}>
-                <Text style={styles.refundLabel}>Refund: ₹{item.refundAmount?.toLocaleString('en-IN') || '0'}</Text>
-                <View style={[styles.refundBadge, { backgroundColor: item.refunded ? COLORS.successLight : COLORS.warningLight }]}>
-                    <Text style={[styles.refundBadgeText, { color: item.refunded ? COLORS.success : COLORS.warning }]}>
-                        {item.refunded ? 'Refunded' : 'Pending'}
-                    </Text>
-                </View>
-            </View>
-            <View style={styles.cardActions}>
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => confirmAction('delete_cancelled', item)}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-                    <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
-                </TouchableOpacity>
-            </View>
-        </Card>
+        <CancelledItem item={item} onConfirm={confirmAction} isLoading={isLoading} />
     );
 
     const renderAlterationItem = ({ item }) => (
-        <Card elevated style={styles.catalogueCard}>
-            <View style={styles.cardRow}>
-                <View style={[styles.cardIconWrap, { backgroundColor: COLORS.slateLight }]}>
-                    <Ionicons name="build-outline" size={22} color={COLORS.slate} />
-                </View>
-                <View style={{ flex: 1, marginLeft: SIZES.md }}>
-                    <Text style={styles.cardTitle}>{item.customerName}</Text>
-                    <Text style={styles.cardSubtitle}>{item.item} — {item.type}</Text>
-                    <Text style={styles.cardMeta}>{formatDate(item.date)}</Text>
-                </View>
-                <StatusBadge status={item.status} size="small" />
-            </View>
-            {item.notes && (
-                <View style={styles.reasonWrap}>
-                    <Ionicons name="document-text-outline" size={14} color={COLORS.textMuted} />
-                    <Text style={styles.reasonText}>{item.notes}</Text>
-                </View>
-            )}
-            <View style={styles.cardActions}>
-                {item.status !== 'completed' && (
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => confirmAction('complete_alteration', item)}
-                        disabled={isLoading}
-                    >
-                        <Ionicons name="checkmark-circle-outline" size={16} color={COLORS.success} />
-                        <Text style={[styles.actionText, { color: COLORS.success }]}>Complete</Text>
-                    </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => confirmAction('delete_alteration', item)}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="trash-outline" size={16} color={COLORS.error} />
-                    <Text style={[styles.actionText, { color: COLORS.error }]}>Delete</Text>
-                </TouchableOpacity>
-            </View>
-        </Card>
+        <AlterationItem item={item} onConfirm={confirmAction} isLoading={isLoading} />
     );
 
     const getCurrentData = () => {
@@ -222,6 +234,10 @@ const CatalogueScreen = ({ navigation }) => {
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    initialNumToRender={8}
+                    windowSize={5}
+                    maxToRenderPerBatch={10}
+                    removeClippedSubviews={Platform.OS === 'android'}
                 />
             )}
 

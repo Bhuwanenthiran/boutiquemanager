@@ -16,6 +16,53 @@ const ORDER_FILTERS = [
     { label: 'Delivered', value: 'delivered' },
 ];
 
+const OrderListItem = React.memo(({ item, navigation, colors, onPriorityColor }) => (
+    <Card
+        onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
+    >
+        <View style={styles.cardHeader}>
+            <View style={styles.cardHeaderLeft}>
+                <View style={[styles.priorityDot, { backgroundColor: onPriorityColor(item.priority) }]} />
+                <View>
+                    <Text style={[styles.orderId, { color: colors.textMuted }]}>{item.id}</Text>
+                    <Text style={[styles.customerName, { color: colors.textPrimary }]}>{item.customerName}</Text>
+                </View>
+            </View>
+            <StatusBadge status={item.status} size="small" />
+        </View>
+
+        <View style={[styles.cardBody, { borderTopColor: colors.borderLight }]}>
+            <View style={styles.detailRow}>
+                <Ionicons name="shirt-outline" size={14} color={colors.textMuted} />
+                <Text style={[styles.detailText, { color: colors.textSecondary }]}>{item.designName}</Text>
+            </View>
+            <View style={styles.detailRow}>
+                <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+                <Text style={[styles.detailText, { color: colors.textSecondary }]}>Due: {formatDate(item.deliveryDate)}</Text>
+            </View>
+        </View>
+
+        <View style={[styles.cardFooter, { borderTopColor: colors.borderLight }]}>
+            <View>
+                <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Total</Text>
+                <Text style={[styles.amountValue, { color: colors.primary }]}>₹{item.totalAmount.toLocaleString('en-IN')}</Text>
+            </View>
+            <View style={styles.balanceWrap}>
+                <Text style={[styles.balanceLabel, { color: colors.textMuted }]}>Balance</Text>
+                <Text style={[styles.balanceValue, { color: colors.textPrimary }, item.balanceAmount > 0 && { color: colors.error }]}>
+                    ₹{item.balanceAmount.toLocaleString('en-IN')}
+                </Text>
+            </View>
+            {item.tailorName && (
+                <View style={[styles.tailorBadge, { backgroundColor: colors.primaryMuted }]}>
+                    <Ionicons name="person-outline" size={12} color={colors.primary} />
+                    <Text style={[styles.tailorName, { color: colors.primary }]}>{item.tailorName}</Text>
+                </View>
+            )}
+        </View>
+    </Card>
+));
+
 const OrderListScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
@@ -46,50 +93,12 @@ const OrderListScreen = ({ navigation }) => {
     };
 
     const renderOrder = ({ item }) => (
-        <Card
-            onPress={() => navigation.navigate('OrderDetail', { orderId: item.id })}
-        >
-            <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderLeft}>
-                    <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(item.priority) }]} />
-                    <View>
-                        <Text style={[styles.orderId, { color: C.textMuted }]}>{item.id}</Text>
-                        <Text style={[styles.customerName, { color: C.textPrimary }]}>{item.customerName}</Text>
-                    </View>
-                </View>
-                <StatusBadge status={item.status} size="small" />
-            </View>
-
-            <View style={[styles.cardBody, { borderTopColor: C.borderLight }]}>
-                <View style={styles.detailRow}>
-                    <Ionicons name="shirt-outline" size={14} color={C.textMuted} />
-                    <Text style={[styles.detailText, { color: C.textSecondary }]}>{item.designName}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                    <Ionicons name="calendar-outline" size={14} color={C.textMuted} />
-                    <Text style={[styles.detailText, { color: C.textSecondary }]}>Due: {formatDate(item.deliveryDate)}</Text>
-                </View>
-            </View>
-
-            <View style={[styles.cardFooter, { borderTopColor: C.borderLight }]}>
-                <View>
-                    <Text style={[styles.amountLabel, { color: C.textMuted }]}>Total</Text>
-                    <Text style={[styles.amountValue, { color: C.primary }]}>₹{item.totalAmount.toLocaleString('en-IN')}</Text>
-                </View>
-                <View style={styles.balanceWrap}>
-                    <Text style={[styles.balanceLabel, { color: C.textMuted }]}>Balance</Text>
-                    <Text style={[styles.balanceValue, { color: C.textPrimary }, item.balanceAmount > 0 && { color: C.error }]}>
-                        ₹{item.balanceAmount.toLocaleString('en-IN')}
-                    </Text>
-                </View>
-                {item.tailorName && (
-                    <View style={[styles.tailorBadge, { backgroundColor: C.primaryMuted }]}>
-                        <Ionicons name="person-outline" size={12} color={C.primary} />
-                        <Text style={[styles.tailorName, { color: C.primary }]}>{item.tailorName}</Text>
-                    </View>
-                )}
-            </View>
-        </Card>
+        <OrderListItem
+            item={item}
+            navigation={navigation}
+            colors={C}
+            onPriorityColor={getPriorityColor}
+        />
     );
 
     return (
@@ -165,6 +174,10 @@ const OrderListScreen = ({ navigation }) => {
                     style={{ flex: 1 }}
                     refreshing={isLoading}
                     onRefresh={onRefresh}
+                    initialNumToRender={6}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                 />
             )}
 

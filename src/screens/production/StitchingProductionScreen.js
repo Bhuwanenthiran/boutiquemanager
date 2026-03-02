@@ -7,40 +7,31 @@ import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay, ErrorCard
 import { SearchBar, FilterChip } from '../../components/forms';
 import { formatTimer, now } from '../../services/dateUtils';
 
-const StitchingProductionScreen = ({ navigation }) => {
-    const productionOrders = useProductionStore((s) => s.productionOrders);
-    const tailors = useProductionStore((s) => s.tailors);
-    const filterTailor = useProductionStore((s) => s.filterTailor);
-    const setFilterTailor = useProductionStore((s) => s.setFilterTailor);
-    const activeTimers = useProductionStore((s) => s.activeTimers);
-    const startTimer = useProductionStore((s) => s.startTimer);
-    const stopTimer = useProductionStore((s) => s.stopTimer);
-    const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
-    const getFilteredProduction = useProductionStore((s) => s.getFilteredProduction);
-    const isLoading = useProductionStore((s) => s.isLoading);
-    const error = useProductionStore((s) => s.error);
-    const clearError = useProductionStore((s) => s.clearError);
-    const init = useProductionStore((s) => s.init);
-
-    const [timerValues, setTimerValues] = useState({});
-    const intervalRef = useRef(null);
+const TimerDisplay = React.memo(({ startTime, isActive, style }) => {
+    const [elapsed, setElapsed] = useState(isActive && startTime ? now() - startTime : 0);
 
     useEffect(() => {
-        intervalRef.current = setInterval(() => {
-            const newTimerValues = {};
-            Object.entries(activeTimers).forEach(([orderId, startTime]) => {
-                newTimerValues[orderId] = formatTimer(now() - startTime);
-            });
-            setTimerValues(newTimerValues);
-        }, 1000);
-        return () => clearInterval(intervalRef.current);
-    }, [activeTimers]);
+        let interval;
+        if (isActive && startTime) {
+            setElapsed(now() - startTime);
+            interval = setInterval(() => {
+                setElapsed(now() - startTime);
+            }, 1000);
+        } else {
+            setElapsed(0);
+        }
+        return () => clearInterval(interval);
+    }, [isActive, startTime]);
 
-    const filteredOrders = getFilteredProduction();
+    return (
+        <Text style={style}>
+            {formatTimer(elapsed)}
+        </Text>
+    );
+});
 
-    const onRefresh = async () => {
-        await init();
-    };
+const OrderCard = React.memo(({ item, activeTimers, startTimer, stopTimer, cycleStatus, isLoading }) => {
+    const isTimerActive = !!activeTimers[item.id];
 
     const getStageIcon = (stage) => {
         switch (stage) {
@@ -62,8 +53,117 @@ const StitchingProductionScreen = ({ navigation }) => {
     };
 
     const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
+    const stageColor = getStageColor(item.productionStage);
+
+    return (
+        <Card elevated style={styles.taskCard}>
+            {/* Card Header */}
+            <View style={styles.taskHeader}>
+                <View style={styles.taskHeaderLeft}>
+                    <View style={[styles.stageIcon, { backgroundColor: stageColor + '18' }]}>
+                        <Ionicons name={getStageIcon(item.productionStage)} size={18} color={stageColor} />
+                    </View>
+                    <View>
+                        <Text style={styles.taskId}>{item.id}</Text>
+                        <Text style={styles.taskCustomer}>{item.customerName}</Text>
+                    </View>
+                </View>
+                <StatusBadge status={item.status} size="small" />
+            </View>
+
+            {/* Design Info */}
+            <View style={styles.taskInfo}>
+                <View style={styles.taskInfoItem}>
+                    <Ionicons name="shirt-outline" size={13} color={COLORS.textMuted} />
+                    <Text style={styles.taskInfoText}>{item.designName}</Text>
+                </View>
+                <View style={styles.taskInfoItem}>
+                    <Ionicons name="person-outline" size={13} color={COLORS.textMuted} />
+                    <Text style={styles.taskInfoText}>{item.tailorName || 'Unassigned'}</Text>
+                </View>
+            </View>
+
+            {/* Production Stages Mini */}
+            <View style={styles.stagesRow}>
+                {['Marking', 'Cutting', 'Stitching'].map((stage, idx) => {
+                    const stageKey = stage.toLowerCase();
+                    const isActive = item.productionStage === stageKey ||
+                        (item.productionStage === 'in_production' && stageKey === 'stitching');
+                    const isDone = statusActions.indexOf(item.status) > statusActions.indexOf(stage === 'Stitching' ? 'In Production' : stage);
+                    return (
+                        <View key={stage} style={styles.miniStage}>
+                            <View style={[
+                                styles.miniStageDot,
+                                isDone && { backgroundColor: COLORS.success },
+                                isActive && { backgroundColor: COLORS.primary },
+                            ]} />
+                            <Text style={[
+                                styles.miniStageLabel,
+                                isActive && { color: COLORS.primary, ...FONTS.semiBold },
+                                isDone && { color: COLORS.success },
+                            ]}>{stage}</Text>
+                        </View>
+                    );
+                })}
+            </View>
+
+            {/* Timer & Actions */}
+            <View style={styles.taskActions}>
+                {/* Timer */}
+                <TouchableOpacity
+                    style={[styles.timerBtn, isTimerActive && styles.timerBtnActive]}
+                    onPress={() => isTimerActive ? stopTimer(item.id) : startTimer(item.id)}
+                    disabled={isLoading}
+                >
+                    <Ionicons
+                        name={isTimerActive ? 'pause' : 'play'}
+                        size={14}
+                        color={isTimerActive ? COLORS.error : COLORS.success}
+                    />
+                    <TimerDisplay
+                        startTime={activeTimers[item.id]}
+                        isActive={isTimerActive}
+                        style={[styles.timerText, isTimerActive && { color: COLORS.error }]}
+                    />
+                </TouchableOpacity>
+
+                {/* Status Cycle */}
+                <TouchableOpacity
+                    style={styles.statusCycleBtn}
+                    onPress={() => cycleStatus(item.id, item.status)}
+                    disabled={isLoading}
+                >
+                    <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
+                    <Text style={styles.statusCycleText}>Next Stage</Text>
+                </TouchableOpacity>
+            </View>
+        </Card>
+    );
+});
+
+const StitchingProductionScreen = ({ navigation }) => {
+    const productionOrders = useProductionStore((s) => s.productionOrders);
+    const tailors = useProductionStore((s) => s.tailors);
+    const filterTailor = useProductionStore((s) => s.filterTailor);
+    const setFilterTailor = useProductionStore((s) => s.setFilterTailor);
+    const activeTimers = useProductionStore((s) => s.activeTimers);
+    const startTimer = useProductionStore((s) => s.startTimer);
+    const stopTimer = useProductionStore((s) => s.stopTimer);
+    const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
+    const getFilteredProduction = useProductionStore((s) => s.getFilteredProduction);
+    const isLoading = useProductionStore((s) => s.isLoading);
+    const error = useProductionStore((s) => s.error);
+    const clearError = useProductionStore((s) => s.clearError);
+    const init = useProductionStore((s) => s.init);
+
+    const filteredOrders = getFilteredProduction();
+
+    const onRefresh = async () => {
+        await init();
+    };
 
     const cycleStatus = async (orderId, currentStatus) => {
+        const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
         const idx = statusActions.indexOf(currentStatus);
         const nextIdx = (idx + 1) % statusActions.length;
         const nextStatus = statusActions[nextIdx];
@@ -77,93 +177,16 @@ const StitchingProductionScreen = ({ navigation }) => {
         }
     };
 
-    const renderOrderCard = ({ item }) => {
-        const isTimerActive = !!activeTimers[item.id];
-        const stageColor = getStageColor(item.productionStage);
-
-        return (
-            <Card elevated style={styles.taskCard}>
-                {/* Card Header */}
-                <View style={styles.taskHeader}>
-                    <View style={styles.taskHeaderLeft}>
-                        <View style={[styles.stageIcon, { backgroundColor: stageColor + '18' }]}>
-                            <Ionicons name={getStageIcon(item.productionStage)} size={18} color={stageColor} />
-                        </View>
-                        <View>
-                            <Text style={styles.taskId}>{item.id}</Text>
-                            <Text style={styles.taskCustomer}>{item.customerName}</Text>
-                        </View>
-                    </View>
-                    <StatusBadge status={item.status} size="small" />
-                </View>
-
-                {/* Design Info */}
-                <View style={styles.taskInfo}>
-                    <View style={styles.taskInfoItem}>
-                        <Ionicons name="shirt-outline" size={13} color={COLORS.textMuted} />
-                        <Text style={styles.taskInfoText}>{item.designName}</Text>
-                    </View>
-                    <View style={styles.taskInfoItem}>
-                        <Ionicons name="person-outline" size={13} color={COLORS.textMuted} />
-                        <Text style={styles.taskInfoText}>{item.tailorName || 'Unassigned'}</Text>
-                    </View>
-                </View>
-
-                {/* Production Stages Mini */}
-                <View style={styles.stagesRow}>
-                    {['Marking', 'Cutting', 'Stitching'].map((stage, idx) => {
-                        const stageKey = stage.toLowerCase();
-                        const isActive = item.productionStage === stageKey ||
-                            (item.productionStage === 'in_production' && stageKey === 'stitching');
-                        const isDone = statusActions.indexOf(item.status) > statusActions.indexOf(stage === 'Stitching' ? 'In Production' : stage);
-                        return (
-                            <View key={stage} style={styles.miniStage}>
-                                <View style={[
-                                    styles.miniStageDot,
-                                    isDone && { backgroundColor: COLORS.success },
-                                    isActive && { backgroundColor: COLORS.primary },
-                                ]} />
-                                <Text style={[
-                                    styles.miniStageLabel,
-                                    isActive && { color: COLORS.primary, ...FONTS.semiBold },
-                                    isDone && { color: COLORS.success },
-                                ]}>{stage}</Text>
-                            </View>
-                        );
-                    })}
-                </View>
-
-                {/* Timer & Actions */}
-                <View style={styles.taskActions}>
-                    {/* Timer */}
-                    <TouchableOpacity
-                        style={[styles.timerBtn, isTimerActive && styles.timerBtnActive]}
-                        onPress={() => isTimerActive ? stopTimer(item.id) : startTimer(item.id)}
-                        disabled={isLoading}
-                    >
-                        <Ionicons
-                            name={isTimerActive ? 'pause' : 'play'}
-                            size={14}
-                            color={isTimerActive ? COLORS.error : COLORS.success}
-                        />
-                        <Text style={[styles.timerText, isTimerActive && { color: COLORS.error }]}>
-                            {timerValues[item.id] || '00:00:00'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Status Cycle */}
-                    <TouchableOpacity
-                        style={styles.statusCycleBtn}
-                        onPress={() => cycleStatus(item.id, item.status)}
-                        disabled={isLoading}
-                    >
-                        <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
-                        <Text style={styles.statusCycleText}>Next Stage</Text>
-                    </TouchableOpacity>
-                </View>
-            </Card>
-        );
-    };
+    const renderOrderCard = ({ item }) => (
+        <OrderCard
+            item={item}
+            activeTimers={activeTimers}
+            startTimer={startTimer}
+            stopTimer={stopTimer}
+            cycleStatus={cycleStatus}
+            isLoading={isLoading}
+        />
+    );
 
     return (
         <View style={styles.container}>
@@ -232,6 +255,10 @@ const StitchingProductionScreen = ({ navigation }) => {
                     style={{ flex: 1 }}
                     refreshing={isLoading}
                     onRefresh={onRefresh}
+                    initialNumToRender={5}
+                    windowSize={5}
+                    maxToRenderPerBatch={5}
+                    removeClippedSubviews={Platform.OS === 'android'}
                 />
             )}
         </View>

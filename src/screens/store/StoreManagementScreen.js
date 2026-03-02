@@ -8,6 +8,96 @@ import { Card, EmptyState, LoadingOverlay, ErrorOverlay } from '../../components
 import { SearchBar, FilterChip, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
+const InventoryItem = React.memo(({ item, colors, isLoading, onUpdateQty, onSell }) => {
+    const getStockStyle = (status) => {
+        switch (status) {
+            case 'in_stock': return { bg: colors.successLight, text: colors.success, label: 'In Stock' };
+            case 'low_stock': return { bg: colors.warningLight, text: colors.warning, label: 'Low Stock' };
+            case 'out_of_stock': return { bg: colors.errorLight, text: colors.error, label: 'Out of Stock' };
+            default: return { bg: colors.borderLight, text: colors.textMuted, label: status };
+        }
+    };
+
+    const stockStyle = getStockStyle(item.status);
+    return (
+        <Card elevated style={styles.inventoryCard}>
+            <View style={[styles.inventoryHeader, { borderBottomColor: colors.borderLight }]}>
+                <View style={[styles.inventoryImageWrap, { backgroundColor: colors.primaryMuted }]}>
+                    <Ionicons name="shirt-outline" size={24} color={colors.primary} />
+                </View>
+                <View style={{ flex: 1, marginLeft: SIZES.md }}>
+                    <Text style={[styles.inventoryName, { color: colors.textPrimary }]}>{item.name}</Text>
+                    <Text style={[styles.inventoryCategory, { color: colors.textMuted }]}>{item.category}</Text>
+                </View>
+                <View style={[styles.stockBadge, { backgroundColor: stockStyle.bg }]}>
+                    <Text style={[styles.stockText, { color: stockStyle.text }]}>{stockStyle.label}</Text>
+                </View>
+            </View>
+
+            <View style={[styles.inventoryDetails, { backgroundColor: colors.bgElevated }]}>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Price</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>₹{item.price.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={styles.detailItem}>
+                    <Text style={[styles.detailLabel, { color: colors.textMuted }]}>Quantity</Text>
+                    <View style={styles.qtyControls}>
+                        <TouchableOpacity
+                            style={[styles.qtyBtn, { borderColor: colors.border, backgroundColor: colors.bgCard }]}
+                            onPress={() => onUpdateQty(item.id, -1)}
+                            disabled={isLoading}
+                        >
+                            <Ionicons name="remove" size={16} color={colors.textPrimary} />
+                        </TouchableOpacity>
+                        <Text style={[styles.qtyValue, { color: colors.textPrimary }]}>{item.quantity}</Text>
+                        <TouchableOpacity
+                            style={[styles.qtyBtn, { borderColor: colors.border, backgroundColor: colors.bgCard }]}
+                            onPress={() => onUpdateQty(item.id, 1)}
+                            disabled={isLoading}
+                        >
+                            <Ionicons name="add" size={16} color={colors.textPrimary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+
+            {item.quantity > 0 && (
+                <TouchableOpacity
+                    style={[styles.sellBtn, { backgroundColor: colors.primaryMuted }]}
+                    onPress={() => onSell(item)}
+                    activeOpacity={0.7}
+                    disabled={isLoading}
+                >
+                    <Ionicons name="cart-outline" size={14} color={colors.primary} />
+                    <Text style={[styles.sellBtnText, { color: colors.primary }]}>Mark as Sold</Text>
+                </TouchableOpacity>
+            )}
+
+            {item.status === 'low_stock' && (
+                <View style={[styles.alertBanner, { backgroundColor: colors.warningLight }]}>
+                    <Ionicons name="alert-circle-outline" size={14} color={colors.warning} />
+                    <Text style={[styles.alertText, { color: colors.warning }]}>Low stock — reorder soon</Text>
+                </View>
+            )}
+        </Card>
+    );
+});
+
+const SoldItem = React.memo(({ item, colors }) => (
+    <Card style={styles.soldCard}>
+        <View style={styles.soldRow}>
+            <View style={{ flex: 1 }}>
+                <Text style={[styles.soldName, { color: colors.textPrimary }]}>{item.name}</Text>
+                <Text style={[styles.soldMeta, { color: colors.textMuted }]}>{item.category} • {item.customer}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.soldPrice, { color: colors.success }]}>₹{item.price.toLocaleString('en-IN')}</Text>
+                <Text style={[styles.soldDate, { color: colors.textMuted }]}>{formatDate(item.soldDate)}</Text>
+            </View>
+        </View>
+    </Card>
+));
+
 const StoreManagementScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
@@ -44,15 +134,6 @@ const StoreManagementScreen = ({ navigation }) => {
         }
     }, [filterCategory, categories]);
 
-    const getStockStyle = (status) => {
-        switch (status) {
-            case 'in_stock': return { bg: C.successLight, text: C.success, label: 'In Stock' };
-            case 'low_stock': return { bg: C.warningLight, text: C.warning, label: 'Low Stock' };
-            case 'out_of_stock': return { bg: C.errorLight, text: C.error, label: 'Out of Stock' };
-            default: return { bg: C.borderLight, text: C.textMuted, label: status };
-        }
-    };
-
     const handleSell = (item) => {
         Alert.alert(
             'Confirm Sale',
@@ -80,85 +161,18 @@ const StoreManagementScreen = ({ navigation }) => {
         }
     };
 
-    const renderInventoryItem = ({ item }) => {
-        const stockStyle = getStockStyle(item.status);
-        return (
-            <Card elevated style={styles.inventoryCard}>
-                <View style={[styles.inventoryHeader, { borderBottomColor: C.borderLight }]}>
-                    <View style={[styles.inventoryImageWrap, { backgroundColor: C.primaryMuted }]}>
-                        <Ionicons name="shirt-outline" size={24} color={C.primary} />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: SIZES.md }}>
-                        <Text style={styles.inventoryName}>{item.name}</Text>
-                        <Text style={styles.inventoryCategory}>{item.category}</Text>
-                    </View>
-                    <View style={[styles.stockBadge, { backgroundColor: stockStyle.bg }]}>
-                        <Text style={[styles.stockText, { color: stockStyle.text }]}>{stockStyle.label}</Text>
-                    </View>
-                </View>
-
-                <View style={styles.inventoryDetails}>
-                    <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Price</Text>
-                        <Text style={styles.detailValue}>₹{item.price.toLocaleString('en-IN')}</Text>
-                    </View>
-                    <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Quantity</Text>
-                        <View style={styles.qtyControls}>
-                            <TouchableOpacity
-                                style={styles.qtyBtn}
-                                onPress={() => handleUpdateQty(item.id, -1)}
-                                disabled={isLoading}
-                            >
-                                <Ionicons name="remove" size={16} color={COLORS.textPrimary} />
-                            </TouchableOpacity>
-                            <Text style={styles.qtyValue}>{item.quantity}</Text>
-                            <TouchableOpacity
-                                style={styles.qtyBtn}
-                                onPress={() => handleUpdateQty(item.id, 1)}
-                                disabled={isLoading}
-                            >
-                                <Ionicons name="add" size={16} color={COLORS.textPrimary} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {item.quantity > 0 && (
-                    <TouchableOpacity
-                        style={styles.sellBtn}
-                        onPress={() => handleSell(item)}
-                        activeOpacity={0.7}
-                        disabled={isLoading}
-                    >
-                        <Ionicons name="cart-outline" size={14} color={COLORS.primary} />
-                        <Text style={styles.sellBtnText}>Mark as Sold</Text>
-                    </TouchableOpacity>
-                )}
-
-                {item.status === 'low_stock' && (
-                    <View style={styles.alertBanner}>
-                        <Ionicons name="alert-circle-outline" size={14} color={COLORS.warning} />
-                        <Text style={styles.alertText}>Low stock — reorder soon</Text>
-                    </View>
-                )}
-            </Card>
-        );
-    };
+    const renderInventoryItem = ({ item }) => (
+        <InventoryItem
+            item={item}
+            colors={C}
+            isLoading={isLoading}
+            onUpdateQty={handleUpdateQty}
+            onSell={handleSell}
+        />
+    );
 
     const renderSoldItem = ({ item }) => (
-        <Card style={styles.soldCard}>
-            <View style={styles.soldRow}>
-                <View style={{ flex: 1 }}>
-                    <Text style={styles.soldName}>{item.name}</Text>
-                    <Text style={styles.soldMeta}>{item.category} • {item.customer}</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.soldPrice}>₹{item.price.toLocaleString('en-IN')}</Text>
-                    <Text style={styles.soldDate}>{formatDate(item.soldDate)}</Text>
-                </View>
-            </View>
-        </Card>
+        <SoldItem item={item} colors={C} />
     );
 
     return (
@@ -251,6 +265,10 @@ const StoreManagementScreen = ({ navigation }) => {
                         showsVerticalScrollIndicator={false}
                         keyboardShouldPersistTaps="handled"
                         style={{ flex: 1 }}
+                        initialNumToRender={5}
+                        windowSize={5}
+                        maxToRenderPerBatch={5}
+                        removeClippedSubviews={Platform.OS === 'android'}
                     />
                 )
             ) : (
@@ -262,6 +280,10 @@ const StoreManagementScreen = ({ navigation }) => {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     style={{ flex: 1 }}
+                    initialNumToRender={10}
+                    windowSize={5}
+                    maxToRenderPerBatch={10}
+                    removeClippedSubviews={Platform.OS === 'android'}
                     ListEmptyComponent={
                         <EmptyState icon="bag-outline" title="No sold items" subtitle="Sold items will appear here" />
                     }

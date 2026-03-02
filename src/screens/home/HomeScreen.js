@@ -10,6 +10,28 @@ import { Card, StatusBadge, LoadingOverlay, ErrorCard, ErrorOverlay } from '../.
 
 const { width } = Dimensions.get('window');
 
+const RecentOrderCard = React.memo(({ order, navigation, colors }) => (
+    <Card
+        style={styles.recentOrderCard}
+        onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+    >
+        <View style={styles.orderTop}>
+            <View>
+                <Text style={[styles.orderId, { color: colors.textMuted }]}>{order.id}</Text>
+                <Text style={[styles.orderCustomer, { color: colors.textPrimary }]}>{order.customerName}</Text>
+            </View>
+            <StatusBadge status={order.status} size="small" />
+        </View>
+        <View style={[styles.orderBottom, { borderTopColor: colors.borderLight }]}>
+            <View style={styles.orderMeta}>
+                <Ionicons name="shirt-outline" size={13} color={colors.textMuted} />
+                <Text style={[styles.orderMetaText, { color: colors.textMuted }]}>{order.designName}</Text>
+            </View>
+            <Text style={[styles.orderAmount, { color: colors.primary }]}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
+        </View>
+    </Card>
+));
+
 const HomeScreen = ({ navigation }) => {
     const isDark = useThemeStore(s => s.isDark);
     const C = getColors(isDark);
@@ -33,30 +55,23 @@ const HomeScreen = ({ navigation }) => {
         }
     }, [fetchOrders, initProduction]);
 
-    const pendingOrders = orders.filter(o => o.status === 'Pending').length;
-    const inProduction = orders.filter(o => ['In Production', 'Marking', 'Cutting'].includes(o.status)).length;
-    const readyOrders = orders.filter(o => o.status === 'Ready').length;
-    const totalRevenue = orders.reduce((sum, o) => sum + o.totalAmount, 0);
-    const lowStockItems = inventory.filter(i => i.status === 'low_stock' || i.status === 'out_of_stock').length;
+    const stats = React.useMemo(() => {
+        return {
+            pendingOrders: orders.filter(o => o.status === 'Pending').length,
+            inProduction: orders.filter(o => ['In Production', 'Marking', 'Cutting'].includes(o.status)).length,
+            readyOrders: orders.filter(o => o.status === 'Ready').length,
+            totalRevenue: orders.reduce((sum, o) => sum + o.totalAmount, 0),
+            lowStockItems: inventory.filter(i => i.status === 'low_stock' || i.status === 'out_of_stock').length,
+            recentOrders: orders.slice(0, 4)
+        };
+    }, [orders, inventory]);
 
-    const quickActions = [
+    const quickActions = React.useMemo(() => [
         { icon: 'add-circle-outline', label: 'New Order', color: C.primary, screen: 'OrderEntry' },
         { icon: 'cut-outline', label: 'Production', color: C.accent, screen: 'StitchingProduction' },
         { icon: 'checkmark-done-outline', label: 'Finishing', color: C.success, screen: 'Finishing' },
         { icon: 'storefront-outline', label: 'Store', color: C.slate, screen: 'StoreManagement' },
-    ];
-
-    const recentOrders = orders.slice(0, 4);
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'Ready': return C.success;
-            case 'In Production': return C.warning;
-            case 'Pending': return C.slate;
-            case 'Marking': case 'Cutting': return C.primary;
-            default: return C.textMuted;
-        }
-    };
+    ], [C]);
 
     return (
         <View style={[styles.container, { backgroundColor: C.bg }]}>
@@ -112,21 +127,21 @@ const HomeScreen = ({ navigation }) => {
                             <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#FFF0CC' }]}>
                                 <Ionicons name="construct-outline" size={20} color={C.warning} />
                             </View>
-                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{inProduction}</Text>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{stats.inProduction}</Text>
                             <Text style={[styles.statLabel, { color: C.textSecondary }]}>In Production</Text>
                         </View>
                         <View style={[styles.statCard, { backgroundColor: C.successLight }]}>
                             <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D4EDDA' }]}>
                                 <Ionicons name="checkmark-circle-outline" size={20} color={C.success} />
                             </View>
-                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{readyOrders}</Text>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{stats.readyOrders}</Text>
                             <Text style={[styles.statLabel, { color: C.textSecondary }]}>Ready</Text>
                         </View>
                         <View style={[styles.statCard, { backgroundColor: C.slateLight }]}>
                             <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D0E2F0' }]}>
                                 <Ionicons name="time-outline" size={20} color={C.slate} />
                             </View>
-                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{pendingOrders}</Text>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{stats.pendingOrders}</Text>
                             <Text style={[styles.statLabel, { color: C.textSecondary }]}>Pending</Text>
                         </View>
                     </ScrollView>
@@ -136,7 +151,7 @@ const HomeScreen = ({ navigation }) => {
                         <View style={styles.revenueHeader}>
                             <View>
                                 <Text style={[styles.revenueLabel, { color: isDark ? C.textMuted : C.textLight }]}>Total Revenue</Text>
-                                <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{totalRevenue.toLocaleString('en-IN')}</Text>
+                                <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{stats.totalRevenue.toLocaleString('en-IN')}</Text>
                             </View>
                             <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.successLight : 'rgba(107, 158, 107, 0.2)' }]}>
                                 <Ionicons name="trending-up" size={14} color={C.success} />
@@ -146,7 +161,7 @@ const HomeScreen = ({ navigation }) => {
                         <View style={[styles.revenueBar, { backgroundColor: isDark ? C.border : 'rgba(255,255,255,0.15)' }]}>
                             <View style={[styles.revenueBarFill, { width: '72%', backgroundColor: C.primary }]} />
                         </View>
-                        <Text style={[styles.revenueSubtext, { color: isDark ? C.textMuted : C.textLight }]}>₹{(totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
+                        <Text style={[styles.revenueSubtext, { color: isDark ? C.textMuted : C.textLight }]}>₹{(stats.totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
                     </View>
 
                     {/* Quick Actions */}
@@ -169,7 +184,7 @@ const HomeScreen = ({ navigation }) => {
                     </View>
 
                     {/* Alerts */}
-                    {lowStockItems > 0 && (
+                    {stats.lowStockItems > 0 && (
                         <TouchableOpacity
                             style={[styles.alertCard, { backgroundColor: C.warningLight, borderColor: C.warning + '30' }]}
                             onPress={() => navigation.navigate('StoreManagement')}
@@ -181,7 +196,7 @@ const HomeScreen = ({ navigation }) => {
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.alertTitle, { color: C.textPrimary }]}>Low Stock Alert</Text>
-                                <Text style={[styles.alertDesc, { color: C.textSecondary }]}>{lowStockItems} item{lowStockItems > 1 ? 's' : ''} need restocking</Text>
+                                <Text style={[styles.alertDesc, { color: C.textSecondary }]}>{stats.lowStockItems} item{stats.lowStockItems > 1 ? 's' : ''} need restocking</Text>
                             </View>
                             <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
                         </TouchableOpacity>
@@ -198,28 +213,13 @@ const HomeScreen = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
-                    {recentOrders.map((order) => (
-                        <Card
+                    {stats.recentOrders.map((order) => (
+                        <RecentOrderCard
                             key={order.id}
-                            style={styles.recentOrderCard}
-                            onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
-                            disabled={isLoading}
-                        >
-                            <View style={styles.orderTop}>
-                                <View>
-                                    <Text style={[styles.orderId, { color: C.textMuted }]}>{order.id}</Text>
-                                    <Text style={[styles.orderCustomer, { color: C.textPrimary }]}>{order.customerName}</Text>
-                                </View>
-                                <StatusBadge status={order.status} size="small" />
-                            </View>
-                            <View style={[styles.orderBottom, { borderTopColor: C.borderLight }]}>
-                                <View style={styles.orderMeta}>
-                                    <Ionicons name="shirt-outline" size={13} color={C.textMuted} />
-                                    <Text style={[styles.orderMetaText, { color: C.textMuted }]}>{order.designName}</Text>
-                                </View>
-                                <Text style={[styles.orderAmount, { color: C.primary }]}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
-                            </View>
-                        </Card>
+                            order={order}
+                            navigation={navigation}
+                            colors={C}
+                        />
                     ))}
 
                     <View style={{ height: 100 }} />
