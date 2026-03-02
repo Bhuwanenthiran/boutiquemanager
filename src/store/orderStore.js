@@ -17,13 +17,16 @@ export const useOrderStore = create((set, get) => ({
     filterStatus: 'all',
     searchQuery: '',
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize all order-related data from the service layer.
      * Should be called once on app start or screen mount.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const [orders, customers, designs, tailors, measurementFields] = await Promise.all([
                 orderService.getOrders(),
@@ -34,19 +37,22 @@ export const useOrderStore = create((set, get) => ({
             ]);
             set({ orders, customers, designs, tailors, measurementFields, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            const message = error.message?.toLowerCase().includes('network')
+                ? 'Check your internet connection and try again.'
+                : 'Failed to load order data. Please try again.';
+            set({ isLoading: false, error: message });
             console.error('Failed to initialize order store:', error);
         }
     },
 
     // Actions
     fetchOrders: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const orders = await orderService.getOrders();
             set({ orders, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Could not sync with server. Please try again.' });
             console.error('Failed to fetch orders:', error);
         }
     },
@@ -73,7 +79,7 @@ export const useOrderStore = create((set, get) => ({
     setSearchQuery: (query) => set({ searchQuery: query }),
 
     addOrder: async (orderData) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newOrder = await orderService.addOrder(orderData);
             set((state) => ({
@@ -83,13 +89,16 @@ export const useOrderStore = create((set, get) => ({
             }));
             return newOrder;
         } catch (error) {
-            set({ isLoading: false });
+            const message = error.message?.toLowerCase().includes('permission')
+                ? 'Permission denied. Insufficient access to create orders.'
+                : 'Failed to create order. Please try again.';
+            set({ isLoading: false, error: message });
             throw error;
         }
     },
 
     updateOrder: async (id, updates) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const updated = await orderService.updateOrder(id, updates);
             set((state) => ({
@@ -97,14 +106,14 @@ export const useOrderStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Update failed. Check your connection.' });
             console.error('Update failed:', error);
             throw error;
         }
     },
 
     deleteOrder: async (id) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await orderService.deleteOrder(id);
             set((state) => ({
@@ -112,7 +121,7 @@ export const useOrderStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Could not delete order. Try again later.' });
             console.error('Delete failed:', error);
             throw error;
         }
@@ -122,7 +131,7 @@ export const useOrderStore = create((set, get) => ({
     clearDraft: () => set({ draftOrder: null }),
 
     updateOrderStatus: async (id, status) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await orderService.updateOrder(id, { status });
             set((state) => ({
@@ -130,7 +139,7 @@ export const useOrderStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Status update failed.' });
             console.error('Update status failed:', error);
             throw error;
         }

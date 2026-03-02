@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert, 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useCatalogueStore } from '../../store/catalogueStore';
-import { Card, EmptyState, StatusBadge, LoadingOverlay } from '../../components/common';
+import { Card, EmptyState, StatusBadge, LoadingOverlay, ErrorOverlay } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -25,6 +25,8 @@ const CatalogueScreen = ({ navigation }) => {
     const deleteAlteration = useCatalogueStore((s) => s.deleteAlteration);
     const updateAlteration = useCatalogueStore((s) => s.updateAlteration);
     const isLoading = useCatalogueStore((s) => s.isLoading);
+    const error = useCatalogueStore((s) => s.error);
+    const clearError = useCatalogueStore((s) => s.clearError);
 
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState(null);
@@ -40,7 +42,6 @@ const CatalogueScreen = ({ navigation }) => {
         try {
             if (modalAction === 'restore') {
                 await restoreHoldOrder(modalItem.id);
-                Alert.alert('Restored', 'Order has been restored successfully');
             } else if (modalAction === 'delete_hold') {
                 await removeHoldOrder(modalItem.id);
             } else if (modalAction === 'delete_cancelled') {
@@ -51,7 +52,7 @@ const CatalogueScreen = ({ navigation }) => {
                 await updateAlteration(modalItem.id, { status: 'completed' });
             }
         } catch (error) {
-            // Handled in store
+            // Handled via store state
         }
         setShowModal(false);
     };
@@ -185,7 +186,13 @@ const CatalogueScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={isLoading} message="Processing..." />
+            <LoadingOverlay visible={isLoading && !error} message="Processing..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={executeAction}
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Catalogue</Text>
                 <Text style={styles.headerSubtitle}>Hold, cancelled & alteration records</Text>

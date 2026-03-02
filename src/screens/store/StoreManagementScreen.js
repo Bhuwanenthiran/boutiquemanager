@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, EmptyState, LoadingOverlay } from '../../components/common';
+import { Card, EmptyState, LoadingOverlay, ErrorOverlay } from '../../components/common';
 import { SearchBar, FilterChip, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -22,6 +22,8 @@ const StoreManagementScreen = ({ navigation }) => {
     const updateQuantity = useStoreManagementStore((s) => s.updateQuantity);
     const markAsSold = useStoreManagementStore((s) => s.markAsSold);
     const isLoading = useStoreManagementStore((s) => s.isLoading);
+    const error = useStoreManagementStore((s) => s.error);
+    const clearError = useStoreManagementStore((s) => s.clearError);
 
     const [activeTab, setActiveTab] = useState('inventory');
     const filteredInventory = getFilteredInventory();
@@ -164,7 +166,13 @@ const StoreManagementScreen = ({ navigation }) => {
             style={[styles.container, { backgroundColor: C.bg }]}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-            <LoadingOverlay visible={isLoading} message="Processing..." />
+            <LoadingOverlay visible={isLoading && !error} message="Processing..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={() => { }} // Retry not easily dynamic here
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Store</Text>
                 <Text style={[styles.headerSubtitle, { color: C.textMuted }]}>Inventory & sales management</Text>

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, FlatList } from '
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay } from '../../components/common';
+import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
 import { formatTimer, now } from '../../services/dateUtils';
 
@@ -18,6 +18,8 @@ const StitchingProductionScreen = ({ navigation }) => {
     const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
     const getFilteredProduction = useProductionStore((s) => s.getFilteredProduction);
     const isLoading = useProductionStore((s) => s.isLoading);
+    const error = useProductionStore((s) => s.error);
+    const clearError = useProductionStore((s) => s.clearError);
     const init = useProductionStore((s) => s.init);
 
     const [timerValues, setTimerValues] = useState({});
@@ -71,7 +73,7 @@ const StitchingProductionScreen = ({ navigation }) => {
             await updateProductionStatus(orderId, 'status', nextStatus);
             await updateProductionStatus(orderId, 'productionStage', nextStage);
         } catch (error) {
-            // Error handled in store
+            // Error overlay handled by store state
         }
     };
 
@@ -165,7 +167,13 @@ const StitchingProductionScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={isLoading && productionOrders.length > 0} message="Updating status..." />
+            <LoadingOverlay visible={isLoading && productionOrders.length > 0 && !error} message="Updating status..." />
+            <ErrorOverlay
+                visible={!!error && productionOrders.length > 0}
+                error={error}
+                onRetry={onRefresh}
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Production</Text>
                 <Text style={styles.headerSubtitle}>{productionOrders.length} active orders</Text>
@@ -199,6 +207,14 @@ const StitchingProductionScreen = ({ navigation }) => {
             {isLoading && productionOrders.length === 0 ? (
                 <View style={{ flex: 1, padding: SIZES.lg }}>
                     <Text style={{ color: COLORS.textMuted, textAlign: 'center' }}>Loading production...</Text>
+                </View>
+            ) : error && productionOrders.length === 0 ? (
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <ErrorCard
+                        title="Failed to load Production"
+                        message={error}
+                        onRetry={onRefresh}
+                    />
                 </View>
             ) : filteredOrders.length === 0 ? (
                 <EmptyState

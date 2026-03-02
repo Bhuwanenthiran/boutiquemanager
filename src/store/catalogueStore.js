@@ -14,12 +14,15 @@ export const useCatalogueStore = create((set, get) => ({
     alterations: [],
     activeTab: 'hold',
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize catalogue data from the service layer.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const [holdOrders, cancelledOrders, alterations] = await Promise.all([
                 catalogueService.getHoldOrders(),
@@ -28,7 +31,7 @@ export const useCatalogueStore = create((set, get) => ({
             ]);
             set({ holdOrders, cancelledOrders, alterations, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load catalogue data.' });
             console.error('Failed to initialize catalogue store:', error);
         }
     },
@@ -36,7 +39,7 @@ export const useCatalogueStore = create((set, get) => ({
     setActiveTab: (tab) => set({ activeTab: tab }),
 
     addHoldOrder: async (order) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newOrder = await catalogueService.addHoldOrder(order);
             set((state) => ({
@@ -44,14 +47,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to place order on hold.' });
             console.error('Add hold order failed:', error);
             throw error;
         }
     },
 
     removeHoldOrder: async (id) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await catalogueService.removeHoldOrder(id);
             set((state) => ({
@@ -59,14 +62,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to remove hold order.' });
             console.error('Remove hold order failed:', error);
             throw error;
         }
     },
 
     restoreHoldOrder: async (id) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await catalogueService.restoreHoldOrder(id);
             set((state) => ({
@@ -74,14 +77,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to restore hold order.' });
             console.error('Restore hold order failed:', error);
             throw error;
         }
     },
 
     addCancelledOrder: async (order) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newOrder = await catalogueService.addCancelledOrder(order);
             set((state) => ({
@@ -89,14 +92,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to process cancellation.' });
             console.error('Add cancelled order failed:', error);
             throw error;
         }
     },
 
     deleteCancelledOrder: async (id) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await catalogueService.deleteCancelledOrder(id);
             set((state) => ({
@@ -104,14 +107,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to delete cancellation record.' });
             console.error('Delete cancelled order failed:', error);
             throw error;
         }
     },
 
     addAlteration: async (alteration) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newAlteration = await catalogueService.addAlteration(alteration);
             set((state) => ({
@@ -119,14 +122,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to add alteration record.' });
             console.error('Add alteration failed:', error);
             throw error;
         }
     },
 
     updateAlteration: async (id, updates) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await catalogueService.updateAlteration(id, updates);
             set((state) => ({
@@ -134,14 +137,14 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update alteration.' });
             console.error('Update alteration failed:', error);
             throw error;
         }
     },
 
     deleteAlteration: async (id) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await catalogueService.deleteAlteration(id);
             set((state) => ({
@@ -149,7 +152,7 @@ export const useCatalogueStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to delete alteration record.' });
             console.error('Delete alteration failed:', error);
             throw error;
         }

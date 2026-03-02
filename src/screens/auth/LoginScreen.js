@@ -6,6 +6,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { FormInput, FormButton } from '../../components/forms';
 import { useAuthStore } from '../../store/authStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ErrorOverlay } from '../../components/common';
 
 const LoginScreen = () => {
     const isDark = useThemeStore(s => s.isDark);
@@ -15,6 +16,8 @@ const LoginScreen = () => {
     const [password, setPassword] = useState('');
     const login = useAuthStore((s) => s.login);
     const isLoading = useAuthStore((s) => s.isLoading);
+    const error = useAuthStore((s) => s.error);
+    const clearError = useAuthStore((s) => s.clearError);
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -25,7 +28,7 @@ const LoginScreen = () => {
         try {
             await login(email, password);
         } catch (error) {
-            Alert.alert('Login Failed', error.message);
+            // Handled via store state
         }
     };
 
@@ -34,6 +37,12 @@ const LoginScreen = () => {
             style={[styles.container, { paddingTop: insets.top, backgroundColor: C.bg }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={handleLogin}
+                onClose={clearError}
+            />
             <View style={styles.content}>
                 {/* Logo & Branding */}
                 <View style={styles.header}>

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useShootStore } from '../../store/shootStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
 import { FormButton } from '../../components/forms';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -15,6 +15,8 @@ const ShootScreen = ({ navigation }) => {
     const addShoot = useShootStore((s) => s.addShoot);
     const addImage = useShootStore((s) => s.addImage);
     const isLoading = useShootStore((s) => s.isLoading);
+    const error = useShootStore((s) => s.error);
+    const clearError = useShootStore((s) => s.clearError);
 
     const [selectedOrder, setSelectedOrder] = useState(orders[0]?.id || null);
 
@@ -77,7 +79,13 @@ const ShootScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={isLoading} message="Processing media..." />
+            <LoadingOverlay visible={isLoading && !error} message="Processing media..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={() => { }} // Retry not easily dynamic
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Media & Shoot</Text>
                 <Text style={styles.headerSubtitle}>Product photography & social uploads</Text>

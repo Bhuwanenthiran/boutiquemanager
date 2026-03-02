@@ -10,17 +10,20 @@ import { productionService } from '../services/productionService';
 export const useShootStore = create((set, get) => ({
     shoots: [],
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize shoot data from the service layer.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const shoots = await productionService.getShoots();
             set({ shoots, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load media records.' });
             console.error('Failed to initialize shoot store:', error);
         }
     },
@@ -30,7 +33,7 @@ export const useShootStore = create((set, get) => ({
     },
 
     addShoot: async (shoot) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newShoot = await productionService.addShoot(shoot);
             set((state) => ({
@@ -38,14 +41,14 @@ export const useShootStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to create shoot record.' });
             console.error('Add shoot failed:', error);
             throw error;
         }
     },
 
     updateShoot: async (id, updates) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await productionService.updateShoot(id, updates);
             set((state) => ({
@@ -53,7 +56,7 @@ export const useShootStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update shoot status.' });
             console.error('Update shoot failed:', error);
             throw error;
         }

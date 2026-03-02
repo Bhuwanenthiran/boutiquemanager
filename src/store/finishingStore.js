@@ -22,17 +22,20 @@ const EMPTY_FINISHING = {
 export const useFinishingStore = create((set, get) => ({
     finishingRecords: {},
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize finishing data from the service layer.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const finishingRecords = await productionService.getFinishingData();
             set({ finishingRecords, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load quality check data.' });
             console.error('Failed to initialize finishing store:', error);
         }
     },
@@ -44,13 +47,13 @@ export const useFinishingStore = create((set, get) => ({
 
     toggleChecklist: async (orderId, field) => {
         const current = get().finishingRecords[orderId] || { ...EMPTY_FINISHING };
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
 
         try {
             const result = await productionService.toggleChecklist(orderId, field, current);
             // null result means the toggle was blocked by ordering rules
             if (result === null) {
-                set({ isLoading: false });
+                set({ isLoading: false, error: 'Cannot skip quality check steps.' });
                 return;
             }
 
@@ -62,14 +65,14 @@ export const useFinishingStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update quality check status.' });
             console.error('Toggle checklist failed:', error);
             throw error;
         }
     },
 
     markAsReady: async (orderId, approvedBy) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const result = await productionService.markAsReady(orderId, approvedBy);
             set((state) => ({
@@ -86,7 +89,7 @@ export const useFinishingStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to grant quality approval.' });
             console.error('Mark as ready failed:', error);
             throw error;
         }

@@ -332,8 +332,176 @@ const styles = StyleSheet.create({
         minWidth: 140,
     },
     loadingText: {
-        fontSize: SIZES.small,
-        ...FONTS.medium,
         marginTop: SIZES.md,
     },
 });
+
+export const ErrorCard = ({ title, message, onRetry, icon = 'alert-circle-outline' }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    return (
+        <View style={[styles.errorCard, { backgroundColor: C.errorLight, borderColor: C.error + '30' }]}>
+            <View style={styles.errorHeader}>
+                <View style={[styles.errorIconWrap, { backgroundColor: C.error + '20' }]}>
+                    <Ionicons name={icon} size={24} color={C.error} />
+                </View>
+                <View style={{ flex: 1, marginLeft: SIZES.md }}>
+                    <Text style={[styles.errorTitle, { color: C.textPrimary }]}>{title || 'Something went wrong'}</Text>
+                    <Text style={[styles.errorText, { color: C.textSecondary }]}>{message}</Text>
+                </View>
+            </View>
+            {onRetry && (
+                <TouchableOpacity
+                    style={[styles.retryBtn, { backgroundColor: C.error }]}
+                    onPress={onRetry}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="refresh-outline" size={16} color={C.textOnPrimary} />
+                    <Text style={[styles.retryText, { color: C.textOnPrimary }]}>Try Again</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
+};
+
+export const ErrorOverlay = ({ visible, error, onRetry, onClose }) => {
+    const isDark = useThemeStore(s => s.isDark);
+    const C = getColors(isDark);
+
+    if (!visible || !error) return null;
+
+    return (
+        <View style={styles.loadingOverlay}>
+            <View style={[styles.errorOverlayCard, { backgroundColor: C.bgCard }]}>
+                <View style={[styles.errorIconWrapLarge, { backgroundColor: C.error + '15' }]}>
+                    <Ionicons name="warning-outline" size={40} color={C.error} />
+                </View>
+                <Text style={[styles.errorOverlayTitle, { color: C.textPrimary }]}>Operation Failed</Text>
+                <Text style={[styles.errorOverlayMessage, { color: C.textMuted }]}>{error}</Text>
+
+                <View style={styles.errorActions}>
+                    {onClose && (
+                        <TouchableOpacity
+                            style={[styles.closeBtn, { borderColor: C.border }]}
+                            onPress={onClose}
+                        >
+                            <Text style={[styles.closeBtnText, { color: C.textSecondary }]}>Dismiss</Text>
+                        </TouchableOpacity>
+                    )}
+                    {onRetry && (
+                        <TouchableOpacity
+                            style={[styles.retryFullBtn, { backgroundColor: C.primary }]}
+                            onPress={onRetry}
+                        >
+                            <Ionicons name="refresh-outline" size={18} color={C.textOnPrimary} />
+                            <Text style={[styles.retryFullText, { color: C.textOnPrimary }]}>Retry Action</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        </View>
+    );
+};
+
+const extraStyles = StyleSheet.create({
+    errorCard: {
+        borderRadius: SIZES.radiusLg,
+        padding: SIZES.lg,
+        borderWidth: 1,
+        marginHorizontal: SIZES.lg,
+        marginVertical: SIZES.md,
+    },
+    errorHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    errorIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    errorTitle: {
+        fontSize: SIZES.body,
+        ...FONTS.semiBold,
+    },
+    errorText: {
+        fontSize: SIZES.small,
+        marginTop: 4,
+        lineHeight: 18,
+    },
+    retryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: SIZES.md,
+        paddingVertical: SIZES.sm,
+        borderRadius: SIZES.radiusMd,
+    },
+    retryText: {
+        fontSize: SIZES.small,
+        ...FONTS.semiBold,
+        marginLeft: 6,
+    },
+    errorOverlayCard: {
+        width: '85%',
+        borderRadius: SIZES.radiusXl,
+        padding: SIZES.xl,
+        alignItems: 'center',
+        ...SHADOWS.large,
+    },
+    errorIconWrapLarge: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SIZES.lg,
+    },
+    errorOverlayTitle: {
+        fontSize: SIZES.subtitle,
+        ...FONTS.bold,
+        marginBottom: SIZES.sm,
+    },
+    errorOverlayMessage: {
+        fontSize: SIZES.body,
+        textAlign: 'center',
+        marginBottom: SIZES.xl,
+        lineHeight: 22,
+    },
+    errorActions: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'center',
+    },
+    closeBtn: {
+        flex: 1,
+        paddingVertical: SIZES.md,
+        borderRadius: SIZES.radiusMd,
+        borderWidth: 1,
+        alignItems: 'center',
+        marginRight: SIZES.sm,
+    },
+    closeBtnText: {
+        fontSize: SIZES.body,
+        ...FONTS.medium,
+    },
+    retryFullBtn: {
+        flex: 2,
+        flexDirection: 'row',
+        paddingVertical: SIZES.md,
+        borderRadius: SIZES.radiusMd,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    retryFullText: {
+        fontSize: SIZES.body,
+        ...FONTS.bold,
+        marginLeft: 8,
+    },
+});
+
+// Update styles at the bottom to merge extraStyles
+Object.assign(styles, extraStyles);

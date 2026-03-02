@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, StatusBadge, FloatingButton, EmptyState, LoadingOverlay } from '../../components/common';
+import { Card, StatusBadge, FloatingButton, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -23,6 +23,8 @@ const OrderListScreen = ({ navigation }) => {
     const filterStatus = useOrderStore((s) => s.filterStatus);
     const searchQuery = useOrderStore((s) => s.searchQuery);
     const isLoading = useOrderStore((s) => s.isLoading);
+    const error = useOrderStore((s) => s.error);
+    const clearError = useOrderStore((s) => s.clearError);
     const setFilterStatus = useOrderStore((s) => s.setFilterStatus);
     const setSearchQuery = useOrderStore((s) => s.setSearchQuery);
     const getFilteredOrders = useOrderStore((s) => s.getFilteredOrders);
@@ -92,7 +94,13 @@ const OrderListScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: C.bg }]}>
-            <LoadingOverlay visible={isLoading && orders.length > 0} message="Updating orders..." />
+            <LoadingOverlay visible={isLoading && orders.length > 0 && !error} message="Updating orders..." />
+            <ErrorOverlay
+                visible={!!error && orders.length > 0}
+                error={error}
+                onRetry={onRefresh}
+                onClose={clearError}
+            />
 
             {/* Header */}
             <View style={styles.header}>
@@ -130,6 +138,14 @@ const OrderListScreen = ({ navigation }) => {
             {isLoading && orders.length === 0 ? (
                 <View style={{ flex: 1, padding: SIZES.lg }}>
                     <Text style={{ color: C.textMuted, textAlign: 'center' }}>Loading orders...</Text>
+                </View>
+            ) : error && orders.length === 0 ? (
+                <View style={{ flex: 1, justifyContent: 'center' }}>
+                    <ErrorCard
+                        title="Connection Error"
+                        message={error}
+                        onRetry={onRefresh}
+                    />
                 </View>
             ) : filteredOrders.length === 0 ? (
                 <EmptyState

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert 
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
-import { Card, LoadingOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
 import { FormInput, FormButton } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -20,6 +20,8 @@ const WorkProductionScreen = ({ navigation }) => {
     const startStage = useProductionStore((s) => s.startStage);
     const completeStage = useProductionStore((s) => s.completeStage);
     const isLoading = useProductionStore((s) => s.isLoading);
+    const error = useProductionStore((s) => s.error);
+    const clearError = useProductionStore((s) => s.clearError);
     const [selectedOrder, setSelectedOrder] = useState(productionOrders[0]?.id || null);
     const [expandedStage, setExpandedStage] = useState(null);
 
@@ -57,7 +59,13 @@ const WorkProductionScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={isLoading} message="Processing..." />
+            <LoadingOverlay visible={isLoading && !error} message="Processing..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={() => { }} // Dynamic retry is harder here, just dismiss
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
                     <Ionicons name="arrow-back" size={22} color={COLORS.textPrimary} />

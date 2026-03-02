@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useFinishingStore } from '../../store/finishingStore';
 import { useOrderStore } from '../../store/orderStore';
-import { Card, LoadingOverlay } from '../../components/common';
+import { Card, LoadingOverlay, ErrorOverlay } from '../../components/common';
 import { FormButton, FormInput } from '../../components/forms';
 import { formatDate } from '../../services/dateUtils';
 
@@ -22,6 +22,8 @@ const FinishingScreen = ({ navigation }) => {
     const toggleChecklist = useFinishingStore((s) => s.toggleChecklist);
     const markAsReady = useFinishingStore((s) => s.markAsReady);
     const isLoading = useFinishingStore((s) => s.isLoading);
+    const error = useFinishingStore((s) => s.error);
+    const clearError = useFinishingStore((s) => s.clearError);
     const updateOrderStatus = useOrderStore((s) => s.updateOrderStatus);
 
     const [selectedOrder, setSelectedOrder] = useState(orders[0]?.id || null);
@@ -70,7 +72,7 @@ const FinishingScreen = ({ navigation }) => {
         try {
             await toggleChecklist(selectedOrder, key);
         } catch (error) {
-            // Handled in store
+            // Handled via store state
         }
     };
 
@@ -88,7 +90,7 @@ const FinishingScreen = ({ navigation }) => {
             setTimeout(() => setShowConfetti(false), 3000);
             Alert.alert('✨ Order Ready!', 'This order has been marked as ready for delivery.');
         } catch (error) {
-            // Handled in store
+            // Handled via store state
         }
     };
 
@@ -97,7 +99,13 @@ const FinishingScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <LoadingOverlay visible={isLoading} message="Processing..." />
+            <LoadingOverlay visible={isLoading && !error} message="Processing..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={() => { }} // Hard to retry dynamic actions here
+                onClose={clearError}
+            />
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Finishing</Text>
                 <Text style={styles.headerSubtitle}>Quality check & prepare for delivery</Text>

@@ -16,13 +16,16 @@ export const useProductionStore = create((set, get) => ({
     filterTailor: 'all',
     filterDate: null,
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize production data from the service layer.
      * Should be called once on app start or screen mount.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const [productionOrders, productionStages, tailors] = await Promise.all([
                 productionService.getProductionOrders(),
@@ -31,7 +34,7 @@ export const useProductionStore = create((set, get) => ({
             ]);
             set({ productionOrders, productionStages, tailors, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to initialize production pipeline.' });
             console.error('Failed to initialize production store:', error);
         }
     },
@@ -48,7 +51,7 @@ export const useProductionStore = create((set, get) => ({
     setFilterTailor: (tailorId) => set({ filterTailor: tailorId }),
 
     updateProductionStatus: async (orderId, field, value) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await productionService.updateProductionStatus(orderId, field, value);
             set((state) => ({
@@ -58,14 +61,14 @@ export const useProductionStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update production status.' });
             console.error('Update production status failed:', error);
             throw error;
         }
     },
 
     updateStage: async (orderId, stageKey, updates) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const result = await productionService.updateStage(orderId, stageKey, updates);
             set((state) => ({
@@ -82,7 +85,7 @@ export const useProductionStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update production stage.' });
             console.error('Update stage failed:', error);
             throw error;
         }
@@ -93,7 +96,7 @@ export const useProductionStore = create((set, get) => ({
     })),
 
     startStage: async (orderId, stageKey) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const result = await productionService.startStage(orderId, stageKey);
             set((state) => ({
@@ -111,14 +114,14 @@ export const useProductionStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Could not start stage. Check your connection.' });
             console.error('Start stage failed:', error);
             throw error;
         }
     },
 
     completeStage: async (orderId, stageKey) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const result = await productionService.completeStage(orderId, stageKey);
             set((state) => ({
@@ -136,7 +139,7 @@ export const useProductionStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to complete stage. Please try again.' });
             console.error('Complete stage failed:', error);
             throw error;
         }
@@ -149,7 +152,7 @@ export const useProductionStore = create((set, get) => ({
     }),
 
     assignTailor: async (orderId, tailorId, tailorName) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await productionService.assignTailor(orderId, tailorId, tailorName);
             set((state) => ({
@@ -159,7 +162,7 @@ export const useProductionStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Could not assign tailor.' });
             console.error('Assign tailor failed:', error);
             throw error;
         }

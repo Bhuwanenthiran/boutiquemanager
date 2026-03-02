@@ -6,7 +6,7 @@ import { useThemeStore } from '../../store/themeStore';
 import { useOrderStore } from '../../store/orderStore';
 import { useProductionStore } from '../../store/productionStore';
 import { useStoreManagementStore } from '../../store/storeManagementStore';
-import { Card, StatusBadge, LoadingOverlay } from '../../components/common';
+import { Card, StatusBadge, LoadingOverlay, ErrorCard, ErrorOverlay } from '../../components/common';
 
 const { width } = Dimensions.get('window');
 
@@ -16,6 +16,8 @@ const HomeScreen = ({ navigation }) => {
     const orders = useOrderStore((s) => s.orders);
     const fetchOrders = useOrderStore((s) => s.fetchOrders);
     const isLoading = useOrderStore((s) => s.isLoading);
+    const error = useOrderStore((s) => s.error);
+    const clearError = useOrderStore((s) => s.clearError);
     const productionOrders = useProductionStore((s) => s.productionOrders);
     const initProduction = useProductionStore((s) => s.init);
     const inventory = useStoreManagementStore((s) => s.inventory);
@@ -58,154 +60,171 @@ const HomeScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: C.bg }]}>
-            <LoadingOverlay visible={isLoading && orders.length === 0} message="Loading dashboard..." />
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
-                refreshControl={
-                    <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />
-                }
-            >
-                {/* Header */}
-                <View style={styles.header}>
-                    <View>
-                        <Text style={[styles.greeting, { color: C.textMuted }]}>Welcome back</Text>
-                        <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.notifBtn, { backgroundColor: C.bgCard }]}
-                        disabled={isLoading}
-                    >
-                        <Ionicons name="notifications-outline" size={22} color={C.textPrimary} />
-                        <View style={[styles.notifDot, { borderColor: C.bgCard }]} />
-                    </TouchableOpacity>
+            <LoadingOverlay visible={isLoading && orders.length === 0 && !error} message="Loading dashboard..." />
+            <ErrorOverlay
+                visible={!!error && orders.length > 0}
+                error={error}
+                onRetry={onRefresh}
+                onClose={clearError}
+            />
+
+            {error && orders.length === 0 ? (
+                <View style={{ flex: 1, justifyContent: 'center', padding: SIZES.xl }}>
+                    <ErrorCard
+                        title="Dashboard Error"
+                        message={error}
+                        onRetry={onRefresh}
+                    />
                 </View>
-
-                {/* Stats Cards */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsRow}>
-                    <View style={[styles.statCard, { backgroundColor: C.primaryMuted }]}>
-                        <View style={[styles.statIcon, { backgroundColor: C.primarySoft }]}>
-                            <Ionicons name="receipt-outline" size={20} color={C.primary} />
-                        </View>
-                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{orders.length}</Text>
-                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Total Orders</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: C.warningLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#FFF0CC' }]}>
-                            <Ionicons name="construct-outline" size={20} color={C.warning} />
-                        </View>
-                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{inProduction}</Text>
-                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>In Production</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: C.successLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D4EDDA' }]}>
-                            <Ionicons name="checkmark-circle-outline" size={20} color={C.success} />
-                        </View>
-                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{readyOrders}</Text>
-                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Ready</Text>
-                    </View>
-                    <View style={[styles.statCard, { backgroundColor: C.slateLight }]}>
-                        <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D0E2F0' }]}>
-                            <Ionicons name="time-outline" size={20} color={C.slate} />
-                        </View>
-                        <Text style={[styles.statValue, { color: C.textPrimary }]}>{pendingOrders}</Text>
-                        <Text style={[styles.statLabel, { color: C.textSecondary }]}>Pending</Text>
-                    </View>
-                </ScrollView>
-
-                {/* Revenue Card */}
-                <View style={[styles.revenueCard, { backgroundColor: isDark ? C.bgCard : C.textPrimary }]}>
-                    <View style={styles.revenueHeader}>
+            ) : (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl refreshing={isLoading} onRefresh={onRefresh} tintColor={C.primary} />
+                    }
+                >
+                    {/* Header */}
+                    <View style={styles.header}>
                         <View>
-                            <Text style={[styles.revenueLabel, { color: isDark ? C.textMuted : C.textLight }]}>Total Revenue</Text>
-                            <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{totalRevenue.toLocaleString('en-IN')}</Text>
+                            <Text style={[styles.greeting, { color: C.textMuted }]}>Welcome back</Text>
+                            <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
                         </View>
-                        <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.successLight : 'rgba(107, 158, 107, 0.2)' }]}>
-                            <Ionicons name="trending-up" size={14} color={C.success} />
-                            <Text style={[styles.revenueBadgeText, { color: C.success }]}>+12%</Text>
-                        </View>
-                    </View>
-                    <View style={[styles.revenueBar, { backgroundColor: isDark ? C.border : 'rgba(255,255,255,0.15)' }]}>
-                        <View style={[styles.revenueBarFill, { width: '72%', backgroundColor: C.primary }]} />
-                    </View>
-                    <Text style={[styles.revenueSubtext, { color: isDark ? C.textMuted : C.textLight }]}>₹{(totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
-                </View>
-
-                {/* Quick Actions */}
-                <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Quick Actions</Text>
-                <View style={styles.actionsGrid}>
-                    {quickActions.map((action, idx) => (
                         <TouchableOpacity
-                            key={idx}
-                            style={[styles.actionCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
-                            onPress={() => navigation.navigate(action.screen)}
-                            activeOpacity={0.7}
+                            style={[styles.notifBtn, { backgroundColor: C.bgCard }]}
                             disabled={isLoading}
                         >
-                            <View style={[styles.actionIcon, { backgroundColor: action.color + '18' }]}>
-                                <Ionicons name={action.icon} size={24} color={action.color} />
-                            </View>
-                            <Text style={[styles.actionLabel, { color: C.textSecondary }]}>{action.label}</Text>
+                            <Ionicons name="notifications-outline" size={22} color={C.textPrimary} />
+                            <View style={[styles.notifDot, { borderColor: C.bgCard }]} />
                         </TouchableOpacity>
-                    ))}
-                </View>
+                    </View>
 
-                {/* Alerts */}
-                {lowStockItems > 0 && (
-                    <TouchableOpacity
-                        style={[styles.alertCard, { backgroundColor: C.warningLight, borderColor: C.warning + '30' }]}
-                        onPress={() => navigation.navigate('StoreManagement')}
-                        activeOpacity={0.8}
-                        disabled={isLoading}
-                    >
-                        <View style={[styles.alertIconWrap, { backgroundColor: C.warning + '20' }]}>
-                            <Ionicons name="warning-outline" size={20} color={C.warning} />
+                    {/* Stats Cards */}
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statsRow}>
+                        <View style={[styles.statCard, { backgroundColor: C.primaryMuted }]}>
+                            <View style={[styles.statIcon, { backgroundColor: C.primarySoft }]}>
+                                <Ionicons name="receipt-outline" size={20} color={C.primary} />
+                            </View>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{orders.length}</Text>
+                            <Text style={[styles.statLabel, { color: C.textSecondary }]}>Total Orders</Text>
                         </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.alertTitle, { color: C.textPrimary }]}>Low Stock Alert</Text>
-                            <Text style={[styles.alertDesc, { color: C.textSecondary }]}>{lowStockItems} item{lowStockItems > 1 ? 's' : ''} need restocking</Text>
+                        <View style={[styles.statCard, { backgroundColor: C.warningLight }]}>
+                            <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#FFF0CC' }]}>
+                                <Ionicons name="construct-outline" size={20} color={C.warning} />
+                            </View>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{inProduction}</Text>
+                            <Text style={[styles.statLabel, { color: C.textSecondary }]}>In Production</Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
-                    </TouchableOpacity>
-                )}
+                        <View style={[styles.statCard, { backgroundColor: C.successLight }]}>
+                            <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D4EDDA' }]}>
+                                <Ionicons name="checkmark-circle-outline" size={20} color={C.success} />
+                            </View>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{readyOrders}</Text>
+                            <Text style={[styles.statLabel, { color: C.textSecondary }]}>Ready</Text>
+                        </View>
+                        <View style={[styles.statCard, { backgroundColor: C.slateLight }]}>
+                            <View style={[styles.statIcon, { backgroundColor: isDark ? C.bgElevated : '#D0E2F0' }]}>
+                                <Ionicons name="time-outline" size={20} color={C.slate} />
+                            </View>
+                            <Text style={[styles.statValue, { color: C.textPrimary }]}>{pendingOrders}</Text>
+                            <Text style={[styles.statLabel, { color: C.textSecondary }]}>Pending</Text>
+                        </View>
+                    </ScrollView>
 
-                {/* Recent Orders */}
-                <View style={styles.sectionRow}>
-                    <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent Orders</Text>
-                    <TouchableOpacity
-                        onPress={() => navigation.navigate('OrdersTab')}
-                        disabled={isLoading}
-                    >
-                        <Text style={[styles.seeAll, { color: C.primary }]}>See All</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {recentOrders.map((order) => (
-                    <Card
-                        key={order.id}
-                        style={styles.recentOrderCard}
-                        onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
-                        disabled={isLoading}
-                    >
-                        <View style={styles.orderTop}>
+                    {/* Revenue Card */}
+                    <View style={[styles.revenueCard, { backgroundColor: isDark ? C.bgCard : C.textPrimary }]}>
+                        <View style={styles.revenueHeader}>
                             <View>
-                                <Text style={[styles.orderId, { color: C.textMuted }]}>{order.id}</Text>
-                                <Text style={[styles.orderCustomer, { color: C.textPrimary }]}>{order.customerName}</Text>
+                                <Text style={[styles.revenueLabel, { color: isDark ? C.textMuted : C.textLight }]}>Total Revenue</Text>
+                                <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{totalRevenue.toLocaleString('en-IN')}</Text>
                             </View>
-                            <StatusBadge status={order.status} size="small" />
-                        </View>
-                        <View style={[styles.orderBottom, { borderTopColor: C.borderLight }]}>
-                            <View style={styles.orderMeta}>
-                                <Ionicons name="shirt-outline" size={13} color={C.textMuted} />
-                                <Text style={[styles.orderMetaText, { color: C.textMuted }]}>{order.designName}</Text>
+                            <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.successLight : 'rgba(107, 158, 107, 0.2)' }]}>
+                                <Ionicons name="trending-up" size={14} color={C.success} />
+                                <Text style={[styles.revenueBadgeText, { color: C.success }]}>+12%</Text>
                             </View>
-                            <Text style={[styles.orderAmount, { color: C.primary }]}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
                         </View>
-                    </Card>
-                ))}
+                        <View style={[styles.revenueBar, { backgroundColor: isDark ? C.border : 'rgba(255,255,255,0.15)' }]}>
+                            <View style={[styles.revenueBarFill, { width: '72%', backgroundColor: C.primary }]} />
+                        </View>
+                        <Text style={[styles.revenueSubtext, { color: isDark ? C.textMuted : C.textLight }]}>₹{(totalRevenue * 0.28).toLocaleString('en-IN', { maximumFractionDigits: 0 })} pending collection</Text>
+                    </View>
 
-                <View style={{ height: 100 }} />
-            </ScrollView>
+                    {/* Quick Actions */}
+                    <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Quick Actions</Text>
+                    <View style={styles.actionsGrid}>
+                        {quickActions.map((action, idx) => (
+                            <TouchableOpacity
+                                key={idx}
+                                style={[styles.actionCard, { backgroundColor: C.bgCard, borderColor: C.borderLight }]}
+                                onPress={() => navigation.navigate(action.screen)}
+                                activeOpacity={0.7}
+                                disabled={isLoading}
+                            >
+                                <View style={[styles.actionIcon, { backgroundColor: action.color + '18' }]}>
+                                    <Ionicons name={action.icon} size={24} color={action.color} />
+                                </View>
+                                <Text style={[styles.actionLabel, { color: C.textSecondary }]}>{action.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Alerts */}
+                    {lowStockItems > 0 && (
+                        <TouchableOpacity
+                            style={[styles.alertCard, { backgroundColor: C.warningLight, borderColor: C.warning + '30' }]}
+                            onPress={() => navigation.navigate('StoreManagement')}
+                            activeOpacity={0.8}
+                            disabled={isLoading}
+                        >
+                            <View style={[styles.alertIconWrap, { backgroundColor: C.warning + '20' }]}>
+                                <Ionicons name="warning-outline" size={20} color={C.warning} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.alertTitle, { color: C.textPrimary }]}>Low Stock Alert</Text>
+                                <Text style={[styles.alertDesc, { color: C.textSecondary }]}>{lowStockItems} item{lowStockItems > 1 ? 's' : ''} need restocking</Text>
+                            </View>
+                            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
+                        </TouchableOpacity>
+                    )}
+
+                    {/* Recent Orders */}
+                    <View style={styles.sectionRow}>
+                        <Text style={[styles.sectionTitle, { color: C.textPrimary }]}>Recent Orders</Text>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('OrdersTab')}
+                            disabled={isLoading}
+                        >
+                            <Text style={[styles.seeAll, { color: C.primary }]}>See All</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {recentOrders.map((order) => (
+                        <Card
+                            key={order.id}
+                            style={styles.recentOrderCard}
+                            onPress={() => navigation.navigate('OrderDetail', { orderId: order.id })}
+                            disabled={isLoading}
+                        >
+                            <View style={styles.orderTop}>
+                                <View>
+                                    <Text style={[styles.orderId, { color: C.textMuted }]}>{order.id}</Text>
+                                    <Text style={[styles.orderCustomer, { color: C.textPrimary }]}>{order.customerName}</Text>
+                                </View>
+                                <StatusBadge status={order.status} size="small" />
+                            </View>
+                            <View style={[styles.orderBottom, { borderTopColor: C.borderLight }]}>
+                                <View style={styles.orderMeta}>
+                                    <Ionicons name="shirt-outline" size={13} color={C.textMuted} />
+                                    <Text style={[styles.orderMetaText, { color: C.textMuted }]}>{order.designName}</Text>
+                                </View>
+                                <Text style={[styles.orderAmount, { color: C.primary }]}>₹{order.totalAmount.toLocaleString('en-IN')}</Text>
+                            </View>
+                        </Card>
+                    ))}
+
+                    <View style={{ height: 100 }} />
+                </ScrollView>
+            )}
         </View>
     );
 };

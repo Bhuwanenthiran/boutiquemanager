@@ -14,12 +14,15 @@ export const useStoreManagementStore = create((set, get) => ({
     searchQuery: '',
     filterCategory: 'all',
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     /**
      * Initialize inventory data from the service layer.
      */
     init: async () => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const [inventory, soldItems] = await Promise.all([
                 inventoryService.getInventory(),
@@ -27,7 +30,7 @@ export const useStoreManagementStore = create((set, get) => ({
             ]);
             set({ inventory, soldItems, isLoading: false });
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to load store inventory.' });
             console.error('Failed to initialize store management:', error);
         }
     },
@@ -52,7 +55,7 @@ export const useStoreManagementStore = create((set, get) => ({
     setFilterCategory: (category) => set({ filterCategory: category }),
 
     addInventoryItem: async (item) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             const newItem = await inventoryService.addInventoryItem(item);
             set((state) => ({
@@ -60,14 +63,14 @@ export const useStoreManagementStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to add item to inventory.' });
             console.error('Add inventory item failed:', error);
             throw error;
         }
     },
 
     updateInventoryItem: async (id, updates) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             await inventoryService.updateInventoryItem(id, updates);
             set((state) => ({
@@ -75,7 +78,7 @@ export const useStoreManagementStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to update inventory item.' });
             console.error('Update inventory item failed:', error);
             throw error;
         }
@@ -99,7 +102,7 @@ export const useStoreManagementStore = create((set, get) => ({
         const item = state.inventory.find(i => i.id === id);
         if (!item || item.quantity === 0) return;
 
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
             // Service creates the sold-item record (ID, timestamp, etc.)
             const soldItem = await inventoryService.markAsSold(item, customerName);
@@ -118,7 +121,7 @@ export const useStoreManagementStore = create((set, get) => ({
                 isLoading: false,
             }));
         } catch (error) {
-            set({ isLoading: false });
+            set({ isLoading: false, error: 'Failed to complete sale transaction.' });
             console.error('Mark as sold failed:', error);
             throw error;
         }

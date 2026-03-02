@@ -5,9 +5,12 @@ export const useAuthStore = create((set) => ({
     isAuthenticated: false,
     role: null, // 'admin' or 'staff'
     isLoading: false,
+    error: null,
+
+    clearError: () => set({ error: null }),
 
     login: async (email, password) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
 
         // Mock authentication logic
         // Admin: admin@atelier.com / admin123
@@ -34,10 +37,11 @@ export const useAuthStore = create((set) => ({
                     });
                     resolve(userData);
                 } else {
-                    set({ isLoading: false });
-                    reject(new Error('Invalid email or password'));
+                    const message = 'Invalid email or password. Please try again.';
+                    set({ isLoading: false, error: message });
+                    reject(new Error(message));
                 }
-            }, 1500);
+            }, 1000);
         });
     },
 

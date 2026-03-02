@@ -6,7 +6,7 @@ import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../../theme';
 import { useThemeStore } from '../../../store/themeStore';
 import { useOrderStore } from '../../../store/orderStore';
 import { FormButton } from '../../../components/forms';
-import { LoadingOverlay, LoadingSkeleton } from '../../../components/common';
+import { LoadingOverlay, LoadingSkeleton, ErrorOverlay } from '../../../components/common';
 
 // Sub-components
 import StepCustomer from './StepCustomer';
@@ -31,6 +31,8 @@ const OrderEntryContainer = ({ navigation }) => {
     const saveDraft = useOrderStore((s) => s.saveDraft);
     const draftOrder = useOrderStore((s) => s.draftOrder);
     const isLoading = useOrderStore((s) => s.isLoading);
+    const error = useOrderStore((s) => s.error);
+    const clearError = useOrderStore((s) => s.clearError);
 
     const [form, setForm] = useState(draftOrder || {
         customerId: '',
@@ -120,7 +122,7 @@ const OrderEntryContainer = ({ navigation }) => {
                 { text: 'OK', onPress: () => navigation.goBack() },
             ]);
         } catch (error) {
-            Alert.alert('Error', 'Failed to create order. Please try again.');
+            // Error overlay handled by store state
         }
     };
 
@@ -177,7 +179,13 @@ const OrderEntryContainer = ({ navigation }) => {
             style={[styles.container, { backgroundColor: C.bg }]}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <LoadingOverlay visible={isLoading} message="Creating order..." />
+            <LoadingOverlay visible={isLoading && !error} message="Creating order..." />
+            <ErrorOverlay
+                visible={!!error}
+                error={error}
+                onRetry={handleSubmit}
+                onClose={clearError}
+            />
             {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isLoading}>
