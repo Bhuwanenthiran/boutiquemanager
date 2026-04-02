@@ -11,6 +11,7 @@ export const useOrderStore = create((set, get) => ({
     orders: [],
     customers: [],
     designs: [],
+    designTemplates: null,
     tailors: [],
     measurementFields: {},
     draftOrder: null,
@@ -28,14 +29,15 @@ export const useOrderStore = create((set, get) => ({
     init: async () => {
         set({ isLoading: true, error: null });
         try {
-            const [orders, customers, designs, tailors, measurementFields] = await Promise.all([
+            const [orders, customers, designs, designTemplates, tailors, measurementFields] = await Promise.all([
                 orderService.getOrders(),
                 orderService.getCustomers(),
                 orderService.getDesigns(),
+                orderService.getDesignTemplates(),
                 orderService.getTailors(),
                 orderService.getMeasurementFields(),
             ]);
-            set({ orders, customers, designs, tailors, measurementFields, isLoading: false });
+            set({ orders, customers, designs, designTemplates, tailors, measurementFields, isLoading: false });
         } catch (error) {
             const message = error.message?.toLowerCase().includes('network')
                 ? 'Check your internet connection and try again.'

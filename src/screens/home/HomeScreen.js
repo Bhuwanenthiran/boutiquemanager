@@ -152,10 +152,10 @@ const HomeScreen = ({ navigation }) => {
                     <View style={[styles.revenueCard, { backgroundColor: isDark ? C.bgCard : C.textPrimary }]}>
                         <View style={styles.revenueHeader}>
                             <View>
-                                <Text style={[styles.revenueLabel, { color: isDark ? C.textMuted : C.textLight }]}>Total Revenue</Text>
-                                <Text style={[styles.revenueValue, { color: C.textOnPrimary }]}>₹{stats.totalRevenue.toLocaleString('en-IN')}</Text>
+                                <Text style={[styles.revenueLabel, { color: isDark ? C.textSecondary : C.textLight }]}>Total Revenue</Text>
+                                <Text style={[styles.revenueValue, { color: isDark ? C.textPrimary : C.textOnPrimary }]}>₹{stats.totalRevenue.toLocaleString('en-IN')}</Text>
                             </View>
-                            <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.successLight : 'rgba(107, 158, 107, 0.2)' }]}>
+                            <View style={[styles.revenueBadge, { backgroundColor: isDark ? C.bgElevated : 'rgba(107, 158, 107, 0.2)' }]}>
                                 <Ionicons name="trending-up" size={14} color={C.success} />
                                 <Text style={[styles.revenueBadgeText, { color: C.success }]}>+12%</Text>
                             </View>

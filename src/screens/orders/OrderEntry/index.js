@@ -24,7 +24,7 @@ const OrderEntryContainer = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const [step, setStep] = useState(0);
     const customers = useOrderStore((s) => s.customers);
-    const designs = useOrderStore((s) => s.designs);
+    const designTemplates = useOrderStore((s) => s.designTemplates);
     const tailors = useOrderStore((s) => s.tailors);
     const measurementFields = useOrderStore((s) => s.measurementFields);
     const addOrder = useOrderStore((s) => s.addOrder);
@@ -38,9 +38,12 @@ const OrderEntryContainer = ({ navigation }) => {
         customerId: '',
         customerName: '',
         phone: '',
-        designId: '',
-        designName: '',
-        category: '',
+        design: {
+            blousePattern: null,
+            frontNeck: null,
+            backNeck: null,
+            aariDesign: null,
+        },
         measurements: {},
         deliveryDate: '',
         totalAmount: '',
@@ -64,18 +67,11 @@ const OrderEntryContainer = ({ navigation }) => {
         }
     };
 
-    const handleDesignSelect = (designId) => {
-        const design = designs.find(d => d.id === designId);
-        if (design) {
-            updateForm('designId', designId);
-            updateForm('designName', design.name);
-            updateForm('category', design.category);
-            // Reset measurements when design changes
-            const fields = measurementFields[design.category] || measurementFields.Default;
-            const emptyMeasurements = {};
-            fields.forEach(f => { emptyMeasurements[f] = ''; });
-            updateForm('measurements', emptyMeasurements);
-        }
+    const handleDesignCategorySelect = (category, itemId) => {
+        setForm(prev => ({
+            ...prev,
+            design: { ...prev.design, [category]: itemId },
+        }));
     };
 
     const handleTailorSelect = (tailorId) => {
@@ -97,7 +93,10 @@ const OrderEntryContainer = ({ navigation }) => {
         if (isLoading) return false;
         switch (step) {
             case 0: return form.customerName.length > 0;
-            case 1: return form.designId.length > 0;
+            case 1: {
+                const { blousePattern, frontNeck, backNeck, aariDesign } = form.design;
+                return !!(blousePattern && frontNeck && backNeck && aariDesign);
+            }
             case 2: return true;
             case 3: return form.totalAmount.length > 0 && form.deliveryDate.length > 0;
             default: return false;
@@ -153,9 +152,9 @@ const OrderEntryContainer = ({ navigation }) => {
                 return (
                     <StepDesign
                         {...commonProps}
-                        designs={designs}
+                        designTemplates={designTemplates}
                         tailors={tailors}
-                        handleDesignSelect={handleDesignSelect}
+                        handleDesignCategorySelect={handleDesignCategorySelect}
                         handleTailorSelect={handleTailorSelect}
                     />
                 );

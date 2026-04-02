@@ -13,7 +13,7 @@ export const MOCK_CUSTOMERS = [
     { id: '5', name: 'Deepa Iyer', phone: '9876543214', email: 'deepa@email.com', address: '56 Chiffon Blvd, Coimbatore' },
 ];
 
-// ===== DESIGNS =====
+// ===== DESIGNS (Legacy flat list — used by existing orders) =====
 export const MOCK_DESIGNS = [
     { id: 'd1', name: 'Classic Anarkali', category: 'Anarkali', image: null, description: 'Traditional floor-length anarkali with heavy embroidery' },
     { id: 'd2', name: 'Modern Lehenga', category: 'Lehenga', image: null, description: 'Contemporary lehenga with minimal work' },
@@ -24,6 +24,34 @@ export const MOCK_DESIGNS = [
     { id: 'd7', name: 'Churidar Set', category: 'Churidar', image: null, description: 'Fitted churidar with short kurti' },
     { id: 'd8', name: 'Aari Work Blouse', category: 'Blouse', image: null, description: 'Intricate aari embroidery blouse' },
 ];
+
+// ===== DESIGN TEMPLATES (4-category structured templates for order entry) =====
+export const DESIGN_TEMPLATES = {
+    blousePatterns: Array.from({ length: 10 }, (_, i) => ({
+        id: `bp${i + 1}`,
+        name: `Blouse Pattern ${i + 1}`,
+        image: `https://via.placeholder.com/150?text=Blouse+${i + 1}`,
+        category: 'blousePattern',
+    })),
+    frontNeckDesigns: Array.from({ length: 10 }, (_, i) => ({
+        id: `fn${i + 1}`,
+        name: `Front Neck ${i + 1}`,
+        image: `https://via.placeholder.com/150?text=FrontNeck+${i + 1}`,
+        category: 'frontNeck',
+    })),
+    backNeckDesigns: Array.from({ length: 10 }, (_, i) => ({
+        id: `bn${i + 1}`,
+        name: `Back Neck ${i + 1}`,
+        image: `https://via.placeholder.com/150?text=BackNeck+${i + 1}`,
+        category: 'backNeck',
+    })),
+    aariDesigns: Array.from({ length: 10 }, (_, i) => ({
+        id: `ad${i + 1}`,
+        name: `Aari Design ${i + 1}`,
+        image: `https://via.placeholder.com/150?text=Aari+${i + 1}`,
+        category: 'aariDesign',
+    })),
+};
 
 // ===== TAILORS =====
 export const MOCK_TAILORS = [

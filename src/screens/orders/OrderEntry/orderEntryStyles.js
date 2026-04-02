@@ -257,4 +257,90 @@ export default StyleSheet.create({
         borderTopColor: COLORS.borderLight,
         ...SHADOWS.medium,
     },
+
+    // ── Design Category Sections ──────────────────────────────────────────
+    designSection: {
+        marginTop: SIZES.lg,
+        marginBottom: SIZES.sm,
+    },
+    designSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: SIZES.sm,
+    },
+    designSectionTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    designSectionTitle: {
+        fontSize: SIZES.bodyLg,
+        color: COLORS.textPrimary,
+        ...FONTS.semiBold,
+    },
+    designSectionBadge: {
+        fontSize: SIZES.caption,
+        paddingHorizontal: SIZES.sm,
+        paddingVertical: 3,
+        borderRadius: SIZES.radiusFull,
+        overflow: 'hidden',
+        ...FONTS.medium,
+    },
+    designSectionBadgeSelected: {
+        backgroundColor: COLORS.primaryMuted,
+        color: COLORS.primary,
+    },
+    designSectionBadgeRequired: {
+        backgroundColor: COLORS.bgElevated,
+        color: COLORS.textMuted,
+    },
+
+    // ── Design Grid ───────────────────────────────────────────────────────
+    designGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        marginHorizontal: -SIZES.xs,
+    },
+    designGridCard: {
+        width: `${100 / 3}%`,
+        paddingHorizontal: SIZES.xs,
+        marginBottom: SIZES.sm,
+        alignItems: 'center',
+        position: 'relative',
+    },
+    designGridCardInner: {
+        width: '100%',
+        backgroundColor: COLORS.bgCard,
+        borderRadius: SIZES.radiusMd,
+        padding: SIZES.sm,
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: COLORS.borderLight,
+    },
+    designGridCardSelectedInner: {
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.primaryMuted,
+    },
+    designGridImage: {
+        width: 56,
+        height: 56,
+        borderRadius: SIZES.radiusMd,
+        backgroundColor: COLORS.bgElevated,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: SIZES.xs,
+        overflow: 'hidden',
+    },
+    designGridName: {
+        fontSize: 10,
+        color: COLORS.textPrimary,
+        ...FONTS.medium,
+        textAlign: 'center',
+        lineHeight: 14,
+    },
+    designGridCheck: {
+        position: 'absolute',
+        top: 4,
+        right: 8,
+    },
 });

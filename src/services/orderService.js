@@ -1,4 +1,4 @@
-import { MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_DESIGNS, MOCK_TAILORS, MEASUREMENT_FIELDS } from './mockData';
+import { MOCK_ORDERS, MOCK_CUSTOMERS, MOCK_DESIGNS, DESIGN_TEMPLATES, MOCK_TAILORS, MEASUREMENT_FIELDS } from './mockData';
 import { now, toEpoch, normalizeDates } from './dateUtils';
 
 /**
@@ -45,6 +45,11 @@ class OrderService {
     async getMeasurementFields() {
         await this.delay();
         return { ...MEASUREMENT_FIELDS };
+    }
+
+    async getDesignTemplates() {
+        await this.delay();
+        return { ...DESIGN_TEMPLATES };
     }
 
     async addOrder(order) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SIZES, FONTS, SHADOWS, getColors } from '../../theme';
 import { useThemeStore } from '../../store/themeStore';
@@ -44,6 +44,7 @@ const LoginScreen = () => {
             <KeyboardAvoidingView
                 style={[styles.container, { backgroundColor: C.bg }]}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
             >
                 <ErrorOverlay
                     visible={!!(error || fieldError)}
@@ -51,7 +52,11 @@ const LoginScreen = () => {
                     onRetry={error ? handleLogin : null}
                     onClose={() => { clearError(); setFieldError(null); }}
                 />
-                <View style={styles.content}>
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+                    keyboardShouldPersistTaps="handled"
+                >
                     {/* Logo & Branding */}
                     <View style={styles.header}>
                         <View style={[styles.logoWrap, { backgroundColor: C.primaryMuted }]}>
@@ -121,12 +126,12 @@ const LoginScreen = () => {
                         </View>
                     </View>
 
-                    {/* Footer */}
-                    <View style={[styles.footer, { bottom: 20 + insets.bottom }]}>
+                    {/* Footer - No longer absolute, moves with content */}
+                    <View style={styles.footer}>
                         <Text style={[styles.footerText, { color: C.textMuted }]}>Secure Login Powered by</Text>
                         <Text style={[styles.footerBrand, { color: C.textSecondary }]}>Studio Excellence</Text>
                     </View>
-                </View>
+                </ScrollView>
             </KeyboardAvoidingView>
         </ScreenWrapper>
     );
@@ -227,10 +232,7 @@ const styles = StyleSheet.create({
         ...FONTS.medium,
     },
     footer: {
-        position: 'absolute',
-        bottom: SIZES.xl,
-        left: 0,
-        right: 0,
+        marginTop: SIZES.xxxl,
         alignItems: 'center',
     },
     footerText: {
