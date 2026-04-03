@@ -12,7 +12,6 @@ export const useProductionStore = create((set, get) => ({
     productionOrders: [],
     productionStages: {},
     tailors: [],
-    activeTimers: {},
     filterTailor: 'all',
     filterDate: null,
     isLoading: false,
@@ -91,10 +90,6 @@ export const useProductionStore = create((set, get) => ({
         }
     },
 
-    startTimer: (orderId) => set((state) => ({
-        activeTimers: { ...state.activeTimers, [orderId]: Date.now() },
-    })),
-
     startStage: async (orderId, stageKey) => {
         set({ isLoading: true, error: null });
         try {
@@ -144,12 +139,6 @@ export const useProductionStore = create((set, get) => ({
             throw error;
         }
     },
-
-    stopTimer: (orderId) => set((state) => {
-        const timers = { ...state.activeTimers };
-        delete timers[orderId];
-        return { activeTimers: timers };
-    }),
 
     assignTailor: async (orderId, tailorId, tailorName) => {
         set({ isLoading: true, error: null });

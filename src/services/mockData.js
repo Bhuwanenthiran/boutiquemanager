@@ -27,30 +27,39 @@ export const MOCK_DESIGNS = [
 
 // ===== DESIGN TEMPLATES (4-category structured templates for order entry) =====
 export const DESIGN_TEMPLATES = {
-    blousePatterns: Array.from({ length: 10 }, (_, i) => ({
-        id: `bp${i + 1}`,
-        name: `Blouse Pattern ${i + 1}`,
-        image: `https://via.placeholder.com/150?text=Blouse+${i + 1}`,
-        category: 'blousePattern',
-    })),
-    frontNeckDesigns: Array.from({ length: 10 }, (_, i) => ({
-        id: `fn${i + 1}`,
-        name: `Front Neck ${i + 1}`,
-        image: `https://via.placeholder.com/150?text=FrontNeck+${i + 1}`,
-        category: 'frontNeck',
-    })),
-    backNeckDesigns: Array.from({ length: 10 }, (_, i) => ({
-        id: `bn${i + 1}`,
-        name: `Back Neck ${i + 1}`,
-        image: `https://via.placeholder.com/150?text=BackNeck+${i + 1}`,
-        category: 'backNeck',
-    })),
-    aariDesigns: Array.from({ length: 10 }, (_, i) => ({
-        id: `ad${i + 1}`,
-        name: `Aari Design ${i + 1}`,
-        image: `https://via.placeholder.com/150?text=Aari+${i + 1}`,
-        category: 'aariDesign',
-    })),
+    blousePatterns: [
+        { id: 'bp1', name: 'Neck Pattern 1', image: require('../../assets/designs/blouse_1.jpg'), category: 'blousePattern' },
+        { id: 'bp2', name: 'Neck Pattern 2', image: require('../../assets/designs/blouse_2.jpg'), category: 'blousePattern' },
+        { id: 'bp3', name: 'Neck Pattern 3', image: require('../../assets/designs/blouse_3.jpg'), category: 'blousePattern' },
+    ],
+    frontNeckDesigns: [
+        { id: 'fn1', name: 'Front Neck 1', image: require('../../assets/designs/front_neck_1.jpg'), category: 'frontNeck' },
+        { id: 'fn2', name: 'Front Neck 2', image: require('../../assets/designs/front_neck_2.jpg'), category: 'frontNeck' },
+        { id: 'fn3', name: 'Front Neck 3', image: require('../../assets/designs/front_neck_3.jpg'), category: 'frontNeck' },
+        { id: 'fn4', name: 'Front Neck 4', image: require('../../assets/designs/front_neck_4.jpg'), category: 'frontNeck' },
+        { id: 'fn5', name: 'Front Neck 5', image: require('../../assets/designs/front_neck_5.jpg'), category: 'frontNeck' },
+        { id: 'fn6', name: 'Front Neck 6', image: require('../../assets/designs/front_neck_6.jpg'), category: 'frontNeck' },
+    ],
+    backNeckDesigns: [
+        { id: 'bn1', name: 'Back Neck 1', image: require('../../assets/designs/back_neck_1.jpg'), category: 'backNeck' },
+        { id: 'bn2', name: 'Back Neck 2', image: require('../../assets/designs/back_neck_2.jpg'), category: 'backNeck' },
+        { id: 'bn3', name: 'Back Neck 3', image: require('../../assets/designs/back_neck_3.jpg'), category: 'backNeck' },
+        { id: 'bn4', name: 'Back Neck 4', image: require('../../assets/designs/back_neck_4.jpg'), category: 'backNeck' },
+        { id: 'bn5', name: 'Back Neck 5', image: require('../../assets/designs/back_neck_5.jpg'), category: 'backNeck' },
+        { id: 'bn6', name: 'Back Neck 6', image: require('../../assets/designs/back_neck_6.jpg'), category: 'backNeck' },
+    ],
+    aariDesigns: [
+        { id: 'ad1', name: 'Aari Pattern 1', image: require('../../assets/designs/aari_1.jpg'), category: 'aariDesign' },
+        { id: 'ad2', name: 'Aari Pattern 2', image: require('../../assets/designs/aari_2.jpg'), category: 'aariDesign' },
+        { id: 'ad3', name: 'Aari Pattern 3', image: require('../../assets/designs/aari_3.jpg'), category: 'aariDesign' },
+        { id: 'ad4', name: 'Aari Pattern 4', image: require('../../assets/designs/aari_4.jpg'), category: 'aariDesign' },
+        { id: 'ad5', name: 'Aari Pattern 5', image: require('../../assets/designs/aari_5.jpg'), category: 'aariDesign' },
+        { id: 'ad6', name: 'Aari Pattern 6', image: require('../../assets/designs/aari_6.jpg'), category: 'aariDesign' },
+        { id: 'ad7', name: 'Aari Pattern 7', image: require('../../assets/designs/aari_7.jpg'), category: 'aariDesign' },
+        { id: 'ad8', name: 'Aari Pattern 8', image: require('../../assets/designs/aari_8.jpg'), category: 'aariDesign' },
+        { id: 'ad9', name: 'Aari Pattern 9', image: require('../../assets/designs/aari_9.jpg'), category: 'aariDesign' },
+        { id: 'ad10', name: 'Aari Pattern 10', image: require('../../assets/designs/aari_10.jpg'), category: 'aariDesign' },
+    ],
 };
 
 // ===== TAILORS =====
@@ -62,17 +71,13 @@ export const MOCK_TAILORS = [
     { id: 't5', name: 'Senthil Master', specialty: 'All-round', rating: 4.5, activeOrders: 6 },
 ];
 
-// ===== MEASUREMENT TEMPLATES =====
-export const MEASUREMENT_FIELDS = {
-    Blouse: ['Shoulder', 'Bust', 'Waist', 'Hip', 'Sleeve Length', 'Sleeve Round', 'Back Neck', 'Front Neck', 'Blouse Length', 'Armhole'],
-    Lehenga: ['Waist', 'Hip', 'Length', 'Flare', 'Can Can Length'],
-    Salwar: ['Waist', 'Hip', 'Length', 'Bottom', 'Knee', 'Thigh'],
-    Churidar: ['Waist', 'Hip', 'Length', 'Bottom', 'Knee', 'Thigh', 'Calf'],
-    Anarkali: ['Shoulder', 'Bust', 'Waist', 'Hip', 'Length', 'Sleeve Length', 'Armhole', 'Flare'],
-    Gown: ['Shoulder', 'Bust', 'Waist', 'Hip', 'Length', 'Sleeve Length', 'Armhole', 'Back Neck'],
-    Bridal: ['Shoulder', 'Bust', 'Waist', 'Hip', 'Length', 'Sleeve Length', 'Armhole', 'Flare', 'Train Length'],
-    Default: ['Chest', 'Waist', 'Hip', 'Length', 'Shoulder', 'Sleeve Length'],
-};
+// ===== MEASUREMENT FIELDS =====
+// Single flat list of boutique-specific measurement fields (no category variation)
+export const MEASUREMENT_FIELDS = [
+    'length', 'shoulder', 'sleeveLength', 'sleeveFit', 'armhole',
+    'biceps', 'bust', 'upperChest', 'hip', 'frontLength',
+    'dart', 'frontNeckDeep', 'backNeckDeep',
+];
 
 // ===== ORDERS =====
 // All date fields are stored as numeric epoch (ms) for Firestore compatibility
@@ -84,7 +89,7 @@ export const MOCK_ORDERS = [
         designId: 'd4',
         designName: 'Bridal Lehenga',
         category: 'Bridal',
-        measurements: { Shoulder: '14', Bust: '36', Waist: '30', Hip: '38', Length: '42', 'Sleeve Length': '18', Armhole: '16', Flare: '6', 'Train Length': '12' },
+        measurements: { length: '42', shoulder: '14', sleeveLength: '18', sleeveFit: '12', armhole: '16', biceps: '13', bust: '36', upperChest: '34', hip: '38', frontLength: '17', dart: '3', frontNeckDeep: '8', backNeckDeep: '7' },
         deliveryDate: toEpoch('2026-03-15'),
         totalAmount: 45000,
         advanceAmount: 20000,
@@ -105,7 +110,7 @@ export const MOCK_ORDERS = [
         designId: 'd3',
         designName: 'Silk Saree Blouse',
         category: 'Blouse',
-        measurements: { Shoulder: '13.5', Bust: '34', Waist: '28', Hip: '36', 'Sleeve Length': '10', 'Sleeve Round': '12', 'Back Neck': '7', 'Front Neck': '8', 'Blouse Length': '15', Armhole: '15' },
+        measurements: { length: '15', shoulder: '13.5', sleeveLength: '10', sleeveFit: '11', armhole: '15', biceps: '12', bust: '34', upperChest: '32', hip: '36', frontLength: '14', dart: '2.5', frontNeckDeep: '8', backNeckDeep: '7' },
         deliveryDate: toEpoch('2026-02-28'),
         totalAmount: 3500,
         advanceAmount: 2000,
@@ -126,7 +131,7 @@ export const MOCK_ORDERS = [
         designId: 'd1',
         designName: 'Classic Anarkali',
         category: 'Anarkali',
-        measurements: { Shoulder: '14', Bust: '35', Waist: '29', Hip: '37', Length: '50', 'Sleeve Length': '22', Armhole: '15.5', Flare: '8' },
+        measurements: { length: '50', shoulder: '14', sleeveLength: '22', sleeveFit: '12', armhole: '15.5', biceps: '13', bust: '35', upperChest: '33', hip: '37', frontLength: '18', dart: '3', frontNeckDeep: '8.5', backNeckDeep: '7' },
         deliveryDate: toEpoch('2026-03-05'),
         totalAmount: 12000,
         advanceAmount: 5000,
@@ -147,7 +152,7 @@ export const MOCK_ORDERS = [
         designId: 'd5',
         designName: 'Salwar Kameez',
         category: 'Salwar',
-        measurements: { Waist: '28', Hip: '36', Length: '38', Bottom: '7', Knee: '14', Thigh: '20' },
+        measurements: { length: '38', shoulder: '13', sleeveLength: '14', sleeveFit: '11', armhole: '14', biceps: '12', bust: '34', upperChest: '32', hip: '36', frontLength: '16', dart: '2', frontNeckDeep: '7', backNeckDeep: '6.5' },
         deliveryDate: toEpoch('2026-03-10'),
         totalAmount: 5500,
         advanceAmount: 3000,
@@ -168,7 +173,7 @@ export const MOCK_ORDERS = [
         designId: 'd8',
         designName: 'Aari Work Blouse',
         category: 'Blouse',
-        measurements: { Shoulder: '14', Bust: '36', Waist: '30', Hip: '38', 'Sleeve Length': '12', 'Sleeve Round': '13', 'Back Neck': '7.5', 'Front Neck': '8.5', 'Blouse Length': '16', Armhole: '16' },
+        measurements: { length: '16', shoulder: '14', sleeveLength: '12', sleeveFit: '12', armhole: '16', biceps: '13', bust: '36', upperChest: '34', hip: '38', frontLength: '15', dart: '3', frontNeckDeep: '8.5', backNeckDeep: '7.5' },
         deliveryDate: toEpoch('2026-03-20'),
         totalAmount: 8000,
         advanceAmount: 4000,

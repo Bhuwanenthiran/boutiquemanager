@@ -6,33 +6,9 @@ import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
 import { StatusBadge, Card, SectionHeader, EmptyState, LoadingOverlay, ErrorCard, ErrorOverlay, ScreenWrapper } from '../../components/common';
 import { SearchBar, FilterChip } from '../../components/forms';
-import { formatTimer, now } from '../../services/dateUtils';
 
-const TimerDisplay = React.memo(({ startTime, isActive, style }) => {
-    const [elapsed, setElapsed] = useState(isActive && startTime ? now() - startTime : 0);
-
-    useEffect(() => {
-        let interval;
-        if (isActive && startTime) {
-            setElapsed(now() - startTime);
-            interval = setInterval(() => {
-                setElapsed(now() - startTime);
-            }, 1000);
-        } else {
-            setElapsed(0);
-        }
-        return () => clearInterval(interval);
-    }, [isActive, startTime]);
-
-    return (
-        <Text style={style}>
-            {formatTimer(elapsed)}
-        </Text>
-    );
-});
-
-const OrderCard = React.memo(({ item, activeTimers, startTimer, stopTimer, cycleStatus, isLoading }) => {
-    const isTimerActive = !!activeTimers[item.id];
+const OrderCard = React.memo(({ item, isLoading, cycleStatus }) => {
+    const isReady = item.status === 'Ready';
 
     const getStageIcon = (stage) => {
         switch (stage) {
@@ -108,35 +84,33 @@ const OrderCard = React.memo(({ item, activeTimers, startTimer, stopTimer, cycle
                 })}
             </View>
 
-            {/* Timer & Actions */}
+            {/* Actions */}
             <View style={styles.taskActions}>
-                {/* Timer */}
-                <TouchableOpacity
-                    style={[styles.timerBtn, isTimerActive && styles.timerBtnActive]}
-                    onPress={() => isTimerActive ? stopTimer(item.id) : startTimer(item.id)}
-                    disabled={isLoading}
-                >
-                    <Ionicons
-                        name={isTimerActive ? 'pause' : 'play'}
-                        size={14}
-                        color={isTimerActive ? COLORS.error : COLORS.success}
+                {/* Info Display (Simplified) */}
+                <View style={styles.taskFooterLeft}>
+                    <Ionicons 
+                        name={isReady ? "checkmark-done-circle" : "time-outline"} 
+                        size={16} 
+                        color={isReady ? COLORS.success : COLORS.textMuted} 
                     />
-                    <TimerDisplay
-                        startTime={activeTimers[item.id]}
-                        isActive={isTimerActive}
-                        style={[styles.timerText, isTimerActive && { color: COLORS.error }]}
-                    />
-                </TouchableOpacity>
+                    <Text style={[styles.taskFooterText, isReady && { color: COLORS.success }]}>
+                        {isReady ? 'Finished' : 'In Progress'}
+                    </Text>
+                </View>
 
-                {/* Status Cycle */}
-                <TouchableOpacity
-                    style={styles.statusCycleBtn}
-                    onPress={() => cycleStatus(item.id, item.status)}
-                    disabled={isLoading}
-                >
-                    <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
-                    <Text style={styles.statusCycleText}>Next Stage</Text>
-                </TouchableOpacity>
+                {/* Status Cycle / Finish Button */}
+                {!isReady && (
+                    <TouchableOpacity
+                        style={styles.statusCycleBtn}
+                        onPress={() => cycleStatus(item.id, item.status)}
+                        disabled={isLoading}
+                    >
+                        <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
+                        <Text style={styles.statusCycleText}>
+                            {item.status === 'In Production' ? 'Finish & Mark Ready' : 'Next Stage'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
         </Card>
     );
@@ -148,9 +122,6 @@ const StitchingProductionScreen = ({ navigation }) => {
     const tailors = useProductionStore((s) => s.tailors);
     const filterTailor = useProductionStore((s) => s.filterTailor);
     const setFilterTailor = useProductionStore((s) => s.setFilterTailor);
-    const activeTimers = useProductionStore((s) => s.activeTimers);
-    const startTimer = useProductionStore((s) => s.startTimer);
-    const stopTimer = useProductionStore((s) => s.stopTimer);
     const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
     const getFilteredProduction = useProductionStore((s) => s.getFilteredProduction);
     const isLoading = useProductionStore((s) => s.isLoading);
@@ -167,8 +138,11 @@ const StitchingProductionScreen = ({ navigation }) => {
     const cycleStatus = async (orderId, currentStatus) => {
         const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
         const idx = statusActions.indexOf(currentStatus);
-        const nextIdx = (idx + 1) % statusActions.length;
-        const nextStatus = statusActions[nextIdx];
+        
+        // If already at the end or not found, do nothing
+        if (idx === -1 || idx === statusActions.length - 1) return;
+
+        const nextStatus = statusActions[idx + 1];
         const nextStage = nextStatus.toLowerCase().replace(/\s/g, '_');
 
         try {
@@ -182,9 +156,6 @@ const StitchingProductionScreen = ({ navigation }) => {
     const renderOrderCard = ({ item }) => (
         <OrderCard
             item={item}
-            activeTimers={activeTimers}
-            startTimer={startTimer}
-            stopTimer={stopTimer}
             cycleStatus={cycleStatus}
             isLoading={isLoading}
         />
@@ -375,23 +346,15 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: COLORS.borderLight,
     },
-    timerBtn: {
+    taskFooterLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: COLORS.successLight,
-        paddingHorizontal: SIZES.md,
-        paddingVertical: SIZES.sm,
-        borderRadius: SIZES.radiusFull,
     },
-    timerBtnActive: {
-        backgroundColor: COLORS.errorLight,
-    },
-    timerText: {
+    taskFooterText: {
         fontSize: SIZES.small,
-        color: COLORS.success,
-        ...FONTS.semiBold,
+        color: COLORS.textMuted,
+        ...FONTS.medium,
         marginLeft: 6,
-        fontVariant: ['tabular-nums'],
     },
     statusCycleBtn: {
         flexDirection: 'row',

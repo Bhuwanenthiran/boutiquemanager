@@ -94,12 +94,16 @@ const OrderDetailScreen = ({ route, navigation }) => {
                         <Text style={styles.sectionTitle}>Measurements</Text>
                     </View>
                     <View style={styles.measureGrid}>
-                        {Object.entries(order.measurements || {}).map(([key, val]) => (
-                            <View key={key} style={styles.measureItem}>
-                                <Text style={styles.measureLabel}>{key}</Text>
-                                <Text style={styles.measureValue}>{val}"</Text>
-                            </View>
-                        ))}
+                        {Object.entries(order.measurements || {}).map(([key, val]) => {
+                            // Convert camelCase key to readable label (e.g. 'sleeveLength' -> 'Sleeve Length')
+                            const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase());
+                            return (
+                                <View key={key} style={styles.measureItem}>
+                                    <Text style={styles.measureLabel}>{label}</Text>
+                                    <Text style={styles.measureValue}>{val}"</Text>
+                                </View>
+                            );
+                        })}
                     </View>
                 </Card>
 

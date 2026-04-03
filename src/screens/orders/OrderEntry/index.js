@@ -11,7 +11,7 @@ import { LoadingOverlay, ErrorOverlay, ScreenWrapper } from '../../../components
 // Sub-components
 import StepCustomer from './StepCustomer';
 import StepDesign from './StepDesign';
-import StepMeasurements from './StepMeasurements';
+import StepMeasurements, { getEmptyMeasurements, REQUIRED_MEASUREMENT_KEYS } from './StepMeasurements';
 import StepPayment from './StepPayment';
 import styles from './orderEntryStyles';
 import AnimatedProgressBar from '../../../components/animations/AnimatedProgressBar';
@@ -26,7 +26,7 @@ const OrderEntryContainer = ({ navigation }) => {
     const customers = useOrderStore((s) => s.customers);
     const designTemplates = useOrderStore((s) => s.designTemplates);
     const tailors = useOrderStore((s) => s.tailors);
-    const measurementFields = useOrderStore((s) => s.measurementFields);
+
     const addOrder = useOrderStore((s) => s.addOrder);
     const saveDraft = useOrderStore((s) => s.saveDraft);
     const draftOrder = useOrderStore((s) => s.draftOrder);
@@ -44,7 +44,7 @@ const OrderEntryContainer = ({ navigation }) => {
             backNeck: null,
             aariDesign: null,
         },
-        measurements: {},
+        measurements: getEmptyMeasurements(),
         deliveryDate: '',
         totalAmount: '',
         advanceAmount: '',
@@ -97,7 +97,10 @@ const OrderEntryContainer = ({ navigation }) => {
                 const { blousePattern, frontNeck, backNeck, aariDesign } = form.design;
                 return !!(blousePattern && frontNeck && backNeck && aariDesign);
             }
-            case 2: return true;
+            case 2: {
+                const m = form.measurements;
+                return REQUIRED_MEASUREMENT_KEYS.every(key => m[key] && m[key].trim().length > 0);
+            }
             case 3: return form.totalAmount.length > 0 && form.deliveryDate.length > 0;
             default: return false;
         }
@@ -130,12 +133,7 @@ const OrderEntryContainer = ({ navigation }) => {
         Alert.alert('Saved', 'Draft saved successfully!');
     };
 
-    const getMeasurementFieldList = () => {
-        if (form.category && measurementFields[form.category]) {
-            return measurementFields[form.category];
-        }
-        return measurementFields.Default;
-    };
+
 
     const renderStepContent = () => {
         const commonProps = { form, updateForm, styles, isLoading };
@@ -163,7 +161,6 @@ const OrderEntryContainer = ({ navigation }) => {
                     <StepMeasurements
                         {...commonProps}
                         handleMeasurementChange={handleMeasurementChange}
-                        getMeasurementFieldList={getMeasurementFieldList}
                     />
                 );
             case 3:

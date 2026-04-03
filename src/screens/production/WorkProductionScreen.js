@@ -6,7 +6,6 @@ import { COLORS, SIZES, FONTS, SHADOWS } from '../../theme';
 import { useProductionStore } from '../../store/productionStore';
 import { Card, LoadingOverlay, ErrorOverlay, EmptyState, ScreenWrapper } from '../../components/common';
 import { FormInput, FormButton } from '../../components/forms';
-import { formatDate } from '../../services/dateUtils';
 
 const STAGES = [
     { key: 'production1', label: 'Production 1', subtitle: 'Base Stitching', icon: 'construct-outline', color: COLORS.slate },
@@ -21,6 +20,7 @@ const WorkProductionScreen = ({ navigation }) => {
     const updateStage = useProductionStore((s) => s.updateStage);
     const startStage = useProductionStore((s) => s.startStage);
     const completeStage = useProductionStore((s) => s.completeStage);
+    const updateProductionStatus = useProductionStore((s) => s.updateProductionStatus);
     const isLoading = useProductionStore((s) => s.isLoading);
     const error = useProductionStore((s) => s.error);
     const clearError = useProductionStore((s) => s.clearError);
@@ -51,6 +51,16 @@ const WorkProductionScreen = ({ navigation }) => {
         }
     };
 
+    const handleFinishProduction = async () => {
+        try {
+            await updateProductionStatus(selectedOrder, 'status', 'Ready');
+            await updateProductionStatus(selectedOrder, 'productionStage', 'ready');
+            Alert.alert('Success', 'Production finished and marked as Ready.');
+        } catch (error) {
+            // Handled in store
+        }
+    };
+
     const getCompletionPercent = () => {
         let completed = 0;
         STAGES.forEach(s => {
@@ -58,6 +68,9 @@ const WorkProductionScreen = ({ navigation }) => {
         });
         return Math.round((completed / STAGES.length) * 100);
     };
+
+    const isAllCompleted = STAGES.every(s => getStageData(s.key).status === 'completed');
+    const isReady = productionOrders.find(o => o.id === selectedOrder)?.status === 'Ready';
 
     return (
         <ScreenWrapper useSafeTop>
@@ -119,7 +132,7 @@ const WorkProductionScreen = ({ navigation }) => {
 
                     <ScrollView
                         showsVerticalScrollIndicator={false}
-                        contentContainerStyle={[styles.stagesContent, { paddingBottom: insets.bottom + 20 }]}
+                        contentContainerStyle={[styles.stagesContent, { paddingBottom: insets.bottom + 100 }]}
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Stepper */}
@@ -186,22 +199,6 @@ const WorkProductionScreen = ({ navigation }) => {
                                             {/* Expanded Content */}
                                             {isExpanded && (
                                                 <View style={styles.stageExpanded}>
-                                                    {/* Dates */}
-                                                    <View style={styles.datesRow}>
-                                                        {data.startedAt && (
-                                                            <View style={styles.dateItem}>
-                                                                <Ionicons name="play-circle-outline" size={14} color={COLORS.success} />
-                                                                <Text style={styles.dateText}>Started: {formatDate(data.startedAt)}</Text>
-                                                            </View>
-                                                        )}
-                                                        {data.completedAt && (
-                                                            <View style={styles.dateItem}>
-                                                                <Ionicons name="checkmark-circle-outline" size={14} color={COLORS.success} />
-                                                                <Text style={styles.dateText}>Completed: {formatDate(data.completedAt)}</Text>
-                                                            </View>
-                                                        )}
-                                                    </View>
-
                                                     {/* Notes */}
                                                     <FormInput
                                                         label="Notes"
@@ -224,7 +221,7 @@ const WorkProductionScreen = ({ navigation }) => {
                                                     <View style={styles.stageActions}>
                                                         {!isCompleted && !isInProgress && (
                                                             <FormButton
-                                                                title="Start Production"
+                                                                title="Start Stage"
                                                                 icon="play-outline"
                                                                 onPress={() => handleStageAction(stage.key, 'start')}
                                                                 loading={isLoading}
@@ -232,7 +229,7 @@ const WorkProductionScreen = ({ navigation }) => {
                                                         )}
                                                         {isInProgress && (
                                                             <FormButton
-                                                                title="Mark Complete"
+                                                                title="Complete Stage"
                                                                 icon="checkmark-outline"
                                                                 onPress={() => handleStageAction(stage.key, 'complete')}
                                                                 loading={isLoading}
@@ -246,6 +243,25 @@ const WorkProductionScreen = ({ navigation }) => {
                                 </View>
                             );
                         })}
+
+                        {/* Finish Production Button */}
+                        {isAllCompleted && !isReady && (
+                            <View style={styles.finishSection}>
+                                <FormButton
+                                    title="Finish & Mark Ready"
+                                    icon="checkmark-done-circle-outline"
+                                    onPress={handleFinishProduction}
+                                    loading={isLoading}
+                                    style={styles.finishBtn}
+                                />
+                            </View>
+                        )}
+                        {isReady && (
+                            <View style={styles.readyBadge}>
+                                <Ionicons name="checkmark-done-circle" size={24} color={COLORS.success} />
+                                <Text style={styles.readyText}>Production Completed</Text>
+                            </View>
+                        )}
                     </ScrollView>
                 </>
             )}
@@ -409,23 +425,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: COLORS.borderLight,
     },
-    datesRow: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: SIZES.md,
-    },
-    dateItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: SIZES.lg,
-        marginBottom: SIZES.xs,
-    },
-    dateText: {
-        fontSize: SIZES.small,
-        color: COLORS.textSecondary,
-        ...FONTS.regular,
-        marginLeft: 4,
-    },
     uploadArea: {
         borderWidth: 1.5,
         borderColor: COLORS.border,
@@ -450,6 +449,28 @@ const styles = StyleSheet.create({
     },
     stageActions: {
         marginTop: SIZES.sm,
+    },
+    finishSection: {
+        marginTop: SIZES.lg,
+        paddingBottom: SIZES.lg,
+    },
+    finishBtn: {
+        backgroundColor: COLORS.success,
+    },
+    readyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: SIZES.lg,
+        padding: SIZES.md,
+        backgroundColor: COLORS.successLight,
+        borderRadius: SIZES.radiusMd,
+    },
+    readyText: {
+        fontSize: SIZES.body,
+        color: COLORS.success,
+        ...FONTS.semiBold,
+        marginLeft: 8,
     },
 });
 
