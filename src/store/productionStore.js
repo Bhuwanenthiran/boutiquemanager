@@ -102,12 +102,12 @@ export const useProductionStore = create((set, get) => ({
                         [stageKey]: {
                             ...(state.productionStages[orderId]?.[stageKey] || {}),
                             status: result.status,
-                            startedAt: result.startedAt,
                         },
                     },
                 },
                 isLoading: false,
             }));
+
         } catch (error) {
             set({ isLoading: false, error: 'Could not start stage. Check your connection.' });
             // Error handled in UI
@@ -127,12 +127,12 @@ export const useProductionStore = create((set, get) => ({
                         [stageKey]: {
                             ...(state.productionStages[orderId]?.[stageKey] || {}),
                             status: result.status,
-                            completedAt: result.completedAt,
                         },
                     },
                 },
                 isLoading: false,
             }));
+
         } catch (error) {
             set({ isLoading: false, error: 'Failed to complete stage. Please try again.' });
             // Error handled in UI

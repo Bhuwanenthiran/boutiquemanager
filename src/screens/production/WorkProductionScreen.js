@@ -29,7 +29,7 @@ const WorkProductionScreen = ({ navigation }) => {
 
     const currentStages = productionStages[selectedOrder] || {};
 
-    const getStageData = (key) => currentStages[key] || { status: 'pending', startedAt: null, completedAt: null, notes: '' };
+    const getStageData = (key) => currentStages[key] || { status: 'pending', notes: '' };
 
     const handleStageAction = async (stageKey, action) => {
         try {

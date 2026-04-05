@@ -2,19 +2,10 @@ import { MOCK_ORDERS, PRODUCTION_STAGES, MOCK_FINISHING, MOCK_SHOOTS, MOCK_TAILO
 import { now, normalizeDates } from './dateUtils';
 
 /**
- * Date fields on production stage objects.
- */
-const STAGE_DATE_FIELDS = ['startedAt', 'completedAt'];
-
-/**
- * Date fields on finishing records.
- */
-const FINISHING_DATE_FIELDS = ['approvedAt'];
-
-/**
  * Statuses that qualify an order for the production pipeline.
  */
 const PRODUCTION_STATUSES = ['Marking', 'Cutting', 'In Production', 'Pending'];
+
 
 /**
  * ProductionService handles production orders, stages, finishing, and shoots.
@@ -23,10 +14,10 @@ const PRODUCTION_STATUSES = ['Marking', 'Cutting', 'In Production', 'Pending'];
  * Stores must call these methods instead of importing data directly.
  * 
  * CONTRACT:
- * - All date fields returned from this service are numeric epoch (ms).
- * - Stage start/complete timestamps use `now()`.
+ * - Stage progression is tracked by status changes only.
  * - ID generation happens here, not in the store.
  */
+
 class ProductionService {
     delay(ms = 500) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -63,49 +54,38 @@ class ProductionService {
 
     async getProductionStages() {
         await this.delay();
-        // Deep-normalize all stage date fields
-        const result = {};
-        Object.entries(PRODUCTION_STAGES).forEach(([orderId, stages]) => {
-            result[orderId] = {};
-            Object.entries(stages).forEach(([stageKey, stageData]) => {
-                result[orderId][stageKey] = normalizeDates(stageData, STAGE_DATE_FIELDS);
-            });
-        });
-        return result;
+        return { ...PRODUCTION_STAGES };
     }
+
 
     async startStage(orderId, stageKey) {
         await this.delay();
-        return { orderId, stageKey, status: 'in_progress', startedAt: now() };
+        return { orderId, stageKey, status: 'in_progress' };
     }
 
     async completeStage(orderId, stageKey) {
         await this.delay();
-        return { orderId, stageKey, status: 'completed', completedAt: now() };
+        return { orderId, stageKey, status: 'completed' };
     }
 
     async updateStage(orderId, stageKey, updates) {
         await this.delay();
-        const normalized = normalizeDates(updates, STAGE_DATE_FIELDS);
-        return { orderId, stageKey, ...normalized };
+        return { orderId, stageKey, ...updates };
     }
+
 
     // ===== Finishing =====
 
     async getFinishingData() {
         await this.delay();
-        const result = {};
-        Object.entries(MOCK_FINISHING).forEach(([orderId, finishing]) => {
-            result[orderId] = normalizeDates(finishing, FINISHING_DATE_FIELDS);
-        });
-        return result;
+        return { ...MOCK_FINISHING };
     }
 
     async updateFinishing(orderId, updates) {
         await this.delay();
-        const normalized = normalizeDates(updates, FINISHING_DATE_FIELDS);
-        return { orderId, ...normalized };
+        return { orderId, ...updates };
     }
+
 
     async markAsReady(orderId, approvedBy) {
         await this.delay();
@@ -114,9 +94,9 @@ class ProductionService {
             isReady: true,
             qualityApproval: true,
             approvedBy,
-            approvedAt: now(),
         };
     }
+
 
     async toggleChecklist(orderId, field, currentRecord) {
         await this.delay();
@@ -164,6 +144,25 @@ class ProductionService {
         await this.delay();
         return { id, ...updates };
     }
+
+    /**
+     * Upload Image — Placeholder for Firebase Storage integration.
+     * In production, this will wrap the `uploadBytes` and `getDownloadURL` SDK calls.
+     */
+    async uploadImage(uri, path = 'shoots') {
+        await this.delay(1200); // Simulate network latency
+
+        // MOCK: Generate a deterministic remote URL for simulation
+        const filename = uri.split('/').pop() || `img_${Date.now()}.jpg`;
+        const remoteUrl = `https://firebasestorage.googleapis.com/v0/b/atelier-assets/o/${path}%2F${filename}?alt=media`;
+
+        return {
+            localUri: uri,
+            remoteUrl: remoteUrl,
+            uploadedAt: now()
+        };
+    }
 }
+
 
 export const productionService = new ProductionService();

@@ -62,15 +62,28 @@ export const useShootStore = create((set, get) => ({
         }
     },
 
-    addImage: (shootId, imageUri) => set((state) => ({
+    addImage: (shootId, imageObj) => set((state) => ({
         shoots: state.shoots.map(s =>
-            s.id === shootId ? { ...s, images: [...s.images, imageUri] } : s
+            s.id === shootId ? { ...s, images: [...s.images, imageObj] } : s
         ),
     })),
 
-    removeImage: (shootId, imageUri) => set((state) => ({
+    uploadImage: async (uri, path = 'shoots') => {
+        set({ isLoading: true, error: null });
+        try {
+            const uploaded = await productionService.uploadImage(uri, path);
+            set({ isLoading: false });
+            return uploaded;
+        } catch (error) {
+            set({ isLoading: false, error: 'Upload failed. Check your network.' });
+            throw error;
+        }
+    },
+
+    removeImage: (shootId, imageId) => set((state) => ({
         shoots: state.shoots.map(s =>
-            s.id === shootId ? { ...s, images: s.images.filter(i => i !== imageUri) } : s
+            s.id === shootId ? { ...s, images: s.images.filter(i => (i.remoteUrl || i.localUri) !== imageId) } : s
         ),
     })),
 }));
+

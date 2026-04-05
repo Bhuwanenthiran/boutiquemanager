@@ -192,21 +192,22 @@ export const MOCK_ORDERS = [
 // ===== PRODUCTION STAGES =====
 export const PRODUCTION_STAGES = {
     ORD001: {
-        production1: { status: 'completed', startedAt: toEpoch('2026-02-11'), completedAt: toEpoch('2026-02-13'), notes: 'Base stitching done' },
-        production2: { status: 'in_progress', startedAt: toEpoch('2026-02-14'), completedAt: null, notes: 'Zardozi work ongoing' },
-        production3: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
+        production1: { status: 'completed', notes: 'Base stitching done' },
+        production2: { status: 'in_progress', notes: 'Zardozi work ongoing' },
+        production3: { status: 'pending', notes: '' },
     },
     ORD002: {
-        production1: { status: 'completed', startedAt: toEpoch('2026-02-06'), completedAt: toEpoch('2026-02-07'), notes: 'Stitching complete' },
-        production2: { status: 'completed', startedAt: toEpoch('2026-02-08'), completedAt: toEpoch('2026-02-10'), notes: 'Maggam work done' },
-        production3: { status: 'completed', startedAt: toEpoch('2026-02-11'), completedAt: toEpoch('2026-02-12'), notes: 'Lining and hooks added' },
+        production1: { status: 'completed', notes: 'Stitching complete' },
+        production2: { status: 'completed', notes: 'Maggam work done' },
+        production3: { status: 'completed', notes: 'Lining and hooks added' },
     },
     ORD003: {
-        production1: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
-        production2: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
-        production3: { status: 'pending', startedAt: null, completedAt: null, notes: '' },
+        production1: { status: 'pending', notes: '' },
+        production2: { status: 'pending', notes: '' },
+        production3: { status: 'pending', notes: '' },
     },
 };
+
 
 // ===== FINISHING CHECKLISTS =====
 export const MOCK_FINISHING = {
@@ -216,7 +217,6 @@ export const MOCK_FINISHING = {
         threadCutting: true,
         qualityApproval: true,
         approvedBy: 'Manager',
-        approvedAt: toEpoch('2026-02-13'),
         isReady: true,
     },
     ORD001: {
@@ -225,16 +225,43 @@ export const MOCK_FINISHING = {
         threadCutting: false,
         qualityApproval: false,
         approvedBy: null,
-        approvedAt: null,
         isReady: false,
     },
 };
 
+
 // ===== SHOOT / MEDIA =====
 export const MOCK_SHOOTS = [
-    { id: 's1', orderId: 'ORD002', images: [], productShootDone: true, instagramUploaded: true, googleCatalogListed: false, notes: 'Shot in studio' },
-    { id: 's2', orderId: 'ORD001', images: [], productShootDone: false, instagramUploaded: false, googleCatalogListed: false, notes: '' },
+    {
+        id: 's1',
+        orderId: 'ORD002',
+        mainImage: 'https://images.unsplash.com/photo-1583391733956-6c7823520556?auto=format&fit=crop&q=80&w=800',
+        images: [
+            { remoteUrl: 'https://images.unsplash.com/photo-1583391733956-6c7823520556?auto=format&fit=crop&q=80&w=800', uploadedAt: toEpoch('2026-02-13') }
+        ],
+        productShootDone: true,
+        instagramUploaded: true,
+        googleCatalogListed: false,
+        customerName: 'Ananya Reddy',
+        status: 'published',
+        notes: 'Shot in studio'
+    },
+    {
+        id: 's2',
+        orderId: 'ORD001',
+        mainImage: 'https://images.unsplash.com/photo-1617033930343-dc8116270947?auto=format&fit=crop&q=80&w=800',
+        images: [
+            { remoteUrl: 'https://images.unsplash.com/photo-1617033930343-dc8116270947?auto=format&fit=crop&q=80&w=800', uploadedAt: toEpoch('2026-02-12') }
+        ],
+        productShootDone: true,
+        instagramUploaded: false,
+        googleCatalogListed: false,
+        customerName: 'Priya Sharma',
+        status: 'draft',
+        notes: ''
+    },
 ];
+
 
 // ===== STORE INVENTORY =====
 export const MOCK_INVENTORY = [

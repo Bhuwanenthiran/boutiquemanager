@@ -69,18 +69,6 @@ export const formatDate = (epoch, format = 'short') => {
     }
 };
 
-/**
- * Formats elapsed seconds into HH:MM:SS for timer display.
- * @param {number} elapsedMs - Elapsed time in milliseconds
- * @returns {string} Formatted timer string
- */
-export const formatTimer = (elapsedMs) => {
-    const totalSecs = Math.floor(elapsedMs / 1000);
-    const hrs = Math.floor(totalSecs / 3600);
-    const mins = Math.floor((totalSecs % 3600) / 60);
-    const secs = totalSecs % 60;
-    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
 
 /**
  * Normalizes an entire object's date fields from any format to epoch ms.

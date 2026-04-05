@@ -20,9 +20,28 @@ const ShootScreen = ({ navigation }) => {
     const error = useShootStore((s) => s.error);
     const clearError = useShootStore((s) => s.clearError);
 
-    const onRefresh = async () => {
-        // Shoots are already in store, normally we'd fetch here
+    const handleUpload = async (uri) => {
+        try {
+            // Upload-ready structure: returns { localUri, remoteUrl, uploadedAt }
+            const uploadedImage = await uploadImage(uri);
+            
+            // Update store with the new image
+            if (shoots.length > 0) {
+                addImage(shoots[0].id, uploadedImage);
+            }
+
+            Alert.alert(
+                'Upload Successful', 
+                'Media has been uploaded to cloud storage and associated with this order record.',
+                [{ text: 'OK' }]
+            );
+            
+            return uploadedImage;
+        } catch (error) {
+            // Handled by store ErrorOverlay
+        }
     };
+
 
     const handlePickImage = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -38,9 +57,8 @@ const ShootScreen = ({ navigation }) => {
             quality: 0.8,
         });
 
-        if (!result.canceled) {
-            // TODO: Upload result.assets[0].uri to Firebase Storage
-            // Image is selected and ready for upload pipeline
+        if (!result.canceled && result.assets[0]) {
+            await handleUpload(result.assets[0].uri);
         }
     };
 
@@ -58,22 +76,26 @@ const ShootScreen = ({ navigation }) => {
             quality: 0.8,
         });
 
-        if (!result.canceled) {
-            // TODO: Upload result.assets[0].uri to Firebase Storage
-            // Photo captured and ready for upload pipeline
+        if (!result.canceled && result.assets[0]) {
+            await handleUpload(result.assets[0].uri);
         }
     };
 
     const handleShare = async (item) => {
         try {
+            // Fallback to local image if mainImage (URL) is not yet available
+            const imageUrl = item.mainImage || (item.images && item.images[0]?.remoteUrl);
+            if (!imageUrl) return;
+
             await Share.share({
                 message: `Check out our latest design: ${item.orderId} - ${item.customerName}`,
-                url: item.mainImage,
+                url: imageUrl,
             });
         } catch {
             // Share dismissed or failed silently
         }
     };
+
 
     return (
         <ScreenWrapper useSafeTop>
