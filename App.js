@@ -45,6 +45,7 @@ export default function App() {
             try {
                 // Preload fonts/icons to prevent "Slow Network" impact & flickers
                 await Font.loadAsync(Ionicons.font);
+
             } catch (e) {
                 console.warn('Font loading error:', e);
             } finally {

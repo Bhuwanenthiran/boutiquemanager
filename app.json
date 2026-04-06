@@ -22,7 +22,11 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FDF6F0"
       },
-      "softwareKeyboardLayoutMode": "adjustResize"
+      "softwareKeyboardLayoutMode": "adjustResize",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.bhuwanenthiran.atelierboutique"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,6 +34,11 @@
     "plugins": [
       "expo-image-picker",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "bf863808-ff4e-4301-b3f4-24af0669ec6e"
+      }
+    }
   }
 }

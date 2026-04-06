@@ -120,9 +120,14 @@ const OrderEntryContainer = ({ navigation }) => {
 
         try {
             await addOrder(order);
-            Alert.alert('Success', 'Order created successfully!', [
-                { text: 'OK', onPress: () => navigation.goBack() },
-            ]);
+            if (Platform.OS === 'web') {
+                window.alert('Order created successfully!');
+                navigation.goBack();
+            } else {
+                Alert.alert('Success', 'Order created successfully!', [
+                    { text: 'OK', onPress: () => navigation.goBack() },
+                ]);
+            }
         } catch (error) {
             // Error overlay handled by store state
         }
