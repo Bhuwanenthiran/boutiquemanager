@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Atelier Boutique",
-    "slug": "atelier-boutique",
+    "name": "Mellinam Designer Studio",
+    "slug": "mellinam-designer-studio",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,7 +26,7 @@
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.bhuwanenthiran.atelierboutique"
+      "package": "com.bhuwanenthiran.mellinamdesignerstudio"
     },
     "web": {
       "favicon": "./assets/favicon.png"

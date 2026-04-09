@@ -1,17 +1,8 @@
-import { db } from '../config/firebase';
-import {
-    collection, doc,
-    getDocs, addDoc, updateDoc, deleteDoc,
-    serverTimestamp, query, orderBy,
-} from 'firebase/firestore';
-import { MOCK_CUSTOMERS, MOCK_DESIGNS, DESIGN_TEMPLATES, MOCK_TAILORS, MEASUREMENT_FIELDS } from './mockData';
-import { now, toEpoch, fromFirestoreTimestamp } from './dateUtils';
+import { MOCK_CUSTOMERS, MOCK_DESIGNS, DESIGN_TEMPLATES, MOCK_TAILORS, MEASUREMENT_FIELDS, MOCK_ORDERS } from './mockData';
+import { now, toEpoch } from './dateUtils';
 
-// ─── Firestore References ───
-const ORDERS_REF = collection(db, 'orders');
-
-// ─── Date fields that need Timestamp → epoch conversion on read ───
-const ORDER_DATE_FIELDS = ['deliveryDate', 'createdAt', 'updatedAt'];
+// Note: Firestore integration is configured in firebase.js but we are using 
+// MOCK_ORDERS for now to ensure stability during the rebrand.
 
 /**
  * Converts Firestore Timestamp fields on a document to numeric epoch (ms).
@@ -55,65 +46,51 @@ class OrderService {
     // ===== Orders (Firestore) =====
 
     async getOrders() {
-        const q = query(ORDERS_REF, orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(docSnap =>
-            convertTimestamps({ id: docSnap.id, ...docSnap.data() })
-        );
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        return [...MOCK_ORDERS].sort((a, b) => b.createdAt - a.createdAt);
     }
 
     async addOrder(order) {
-        // Build Firestore document — normalize dates, add server timestamps
-        const orderData = stripUndefined({
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const newOrder = {
             ...order,
-            deliveryDate: toEpoch(order.deliveryDate),
-            isDraft: false,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
-        // Remove client-side id — Firestore auto-generates document ID
-        delete orderData.id;
-
-        const docRef = await addDoc(ORDERS_REF, orderData);
-
-        // Return order with Firestore-generated ID and client-side timestamp
-        // (server timestamp resolves async; client epoch keeps the store responsive)
-        return {
-            ...order,
-            id: docRef.id,
+            id: `ORD${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
             deliveryDate: toEpoch(order.deliveryDate),
             createdAt: now(),
             updatedAt: now(),
             isDraft: false,
         };
+        MOCK_ORDERS.unshift(newOrder);
+        return newOrder;
     }
 
     async updateOrder(id, updates) {
-        const docRef = doc(db, 'orders', id);
-
-        const payload = stripUndefined({ ...updates });
-
-        // Normalize date fields if present in the update
-        if ('deliveryDate' in payload) {
-            payload.deliveryDate = toEpoch(payload.deliveryDate);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const index = MOCK_ORDERS.findIndex(o => o.id === id);
+        if (index !== -1) {
+            const updated = {
+                ...MOCK_ORDERS[index],
+                ...updates,
+                updatedAt: now(),
+            };
+            if ('deliveryDate' in updates) {
+                updated.deliveryDate = toEpoch(updates.deliveryDate);
+            }
+            MOCK_ORDERS[index] = updated;
+            return updated;
         }
-        payload.updatedAt = serverTimestamp();
-
-        await updateDoc(docRef, payload);
-
-        // Return shape the store expects: { id, ...updates }
-        return {
-            id,
-            ...updates,
-            ...('deliveryDate' in updates ? { deliveryDate: toEpoch(updates.deliveryDate) } : {}),
-            updatedAt: now(),
-        };
+        throw new Error('Order not found');
     }
 
     async deleteOrder(id) {
-        const docRef = doc(db, 'orders', id);
-        await deleteDoc(docRef);
-        return true;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const index = MOCK_ORDERS.findIndex(o => o.id === id);
+        if (index !== -1) {
+            MOCK_ORDERS.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     // ===== Reference Data (Local — migrate later) =====

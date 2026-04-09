@@ -13,6 +13,9 @@ const OrderCard = React.memo(({ item, isLoading, cycleStatus }) => {
     const getStageIcon = (stage) => {
         switch (stage) {
             case 'marking': return 'pencil-outline';
+            case 'production1': return 'shirt-outline';
+            case 'production2': return 'flower-outline';
+            case 'production3': return 'sparkles-outline';
             case 'cutting': return 'cut-outline';
             case 'stitching': return 'construct-outline';
             case 'pending': return 'time-outline';
@@ -23,13 +26,16 @@ const OrderCard = React.memo(({ item, isLoading, cycleStatus }) => {
     const getStageColor = (stage) => {
         switch (stage) {
             case 'marking': return COLORS.slate;
+            case 'production1': return COLORS.primary;
+            case 'production2': return COLORS.accent;
+            case 'production3': return COLORS.info;
             case 'cutting': return COLORS.warning;
-            case 'stitching': return COLORS.primary;
+            case 'stitching': return COLORS.success;
             default: return COLORS.textMuted;
         }
     };
 
-    const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
+    const statusActions = ['Pending', 'Marking', 'Production1', 'Production2', 'Production3', 'Cutting', 'Stitching', 'Ready'];
     const stageColor = getStageColor(item.productionStage);
 
     return (
@@ -62,11 +68,18 @@ const OrderCard = React.memo(({ item, isLoading, cycleStatus }) => {
 
             {/* Production Stages Mini */}
             <View style={styles.stagesRow}>
-                {['Marking', 'Cutting', 'Stitching'].map((stage, idx) => {
-                    const stageKey = stage.toLowerCase();
-                    const isActive = item.productionStage === stageKey ||
-                        (item.productionStage === 'in_production' && stageKey === 'stitching');
-                    const isDone = statusActions.indexOf(item.status) > statusActions.indexOf(stage === 'Stitching' ? 'In Production' : stage);
+                {['Marking', 'Prod 1', 'Prod 2', 'Prod 3', 'Cutting', 'Stitch'].map((stage, idx) => {
+                    const statusMap = {
+                        'Marking': 'marking',
+                        'Prod 1': 'production1',
+                        'Prod 2': 'production2',
+                        'Prod 3': 'production3',
+                        'Cutting': 'cutting',
+                        'Stitch': 'stitching'
+                    };
+                    const stageKey = statusMap[stage];
+                    const isActive = item.productionStage === stageKey;
+                    const isDone = statusActions.indexOf(item.status) > statusActions.indexOf(stage === 'Prod 1' ? 'Production1' : stage === 'Prod 2' ? 'Production2' : stage === 'Prod 3' ? 'Production3' : stage === 'Stitch' ? 'Stitching' : stage);
                     return (
                         <View key={stage} style={styles.miniStage}>
                             <View style={[
@@ -107,7 +120,7 @@ const OrderCard = React.memo(({ item, isLoading, cycleStatus }) => {
                     >
                         <Ionicons name="arrow-forward-outline" size={14} color={COLORS.primary} />
                         <Text style={styles.statusCycleText}>
-                            {item.status === 'In Production' ? 'Finish & Mark Ready' : 'Next Stage'}
+                            {item.status === 'Stitching' ? 'Finish & Mark Ready' : 'Next Stage'}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -136,7 +149,7 @@ const StitchingProductionScreen = ({ navigation }) => {
     };
 
     const cycleStatus = async (orderId, currentStatus) => {
-        const statusActions = ['Pending', 'Marking', 'Cutting', 'In Production', 'Ready'];
+        const statusActions = ['Pending', 'Marking', 'Production1', 'Production2', 'Production3', 'Cutting', 'Stitching', 'Ready'];
         const idx = statusActions.indexOf(currentStatus);
         
         // If already at the end or not found, do nothing

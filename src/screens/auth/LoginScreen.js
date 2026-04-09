@@ -62,7 +62,7 @@ const LoginScreen = () => {
                         <View style={[styles.logoWrap, { backgroundColor: C.primaryMuted }]}>
                             <Ionicons name="diamond-outline" size={48} color={C.primary} />
                         </View>
-                        <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                        <Text style={[styles.title, { color: C.textPrimary }]}>Mellinam Designer Studio</Text>
                         <Text style={[styles.subtitle, { color: C.textMuted }]}>Management System</Text>
                     </View>
 
@@ -72,7 +72,7 @@ const LoginScreen = () => {
                             label="Email Address"
                             value={email}
                             onChangeText={(v) => { setEmail(v); setFieldError(null); }}
-                            placeholder="admin@atelier.com"
+                            placeholder="admin@mellinam.com"
                             keyboardType="email-address"
                             autoCapitalize="none"
                             icon="mail-outline"
@@ -110,14 +110,14 @@ const LoginScreen = () => {
                             <View style={styles.demoRow}>
                                 <TouchableOpacity
                                     style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
-                                    onPress={() => { setEmail('admin@atelier.com'); setPassword('admin123'); setFieldError(null); clearError(); }}
+                                    onPress={() => { setEmail('admin@mellinam.com'); setPassword('admin123'); setFieldError(null); clearError(); }}
                                     disabled={isLoading}
                                 >
                                     <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Admin Login</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
                                     style={[styles.demoChip, { backgroundColor: C.bgElevated, borderColor: C.border }]}
-                                    onPress={() => { setEmail('staff@atelier.com'); setPassword('staff123'); setFieldError(null); clearError(); }}
+                                    onPress={() => { setEmail('staff@mellinam.com'); setPassword('staff123'); setFieldError(null); clearError(); }}
                                     disabled={isLoading}
                                 >
                                     <Text style={[styles.demoChipText, { color: C.textSecondary }]}>Staff Login</Text>

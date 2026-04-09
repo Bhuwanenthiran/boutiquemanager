@@ -8,9 +8,12 @@ import { Card, LoadingOverlay, ErrorOverlay, EmptyState, ScreenWrapper } from '.
 import { FormInput, FormButton } from '../../components/forms';
 
 const STAGES = [
-    { key: 'production1', label: 'Production 1', subtitle: 'Base Stitching', icon: 'construct-outline', color: COLORS.slate },
+    { key: 'marking', label: 'Marking', subtitle: 'Design Layout', icon: 'pencil-outline', color: COLORS.slate },
+    { key: 'production1', label: 'Production 1', subtitle: 'Base Stitching', icon: 'shirt-outline', color: COLORS.primary },
     { key: 'production2', label: 'Production 2', subtitle: 'Aari / Embroidery', icon: 'flower-outline', color: COLORS.accent },
-    { key: 'production3', label: 'Production 3', subtitle: 'Add-ons & Detailing', icon: 'sparkles-outline', color: COLORS.primary },
+    { key: 'production3', label: 'Production 3', subtitle: 'Add-ons & Detailing', icon: 'sparkles-outline', color: COLORS.info },
+    { key: 'cutting', label: 'Cutting', subtitle: 'Fabric Cutting', icon: 'cut-outline', color: COLORS.warning },
+    { key: 'stitching', label: 'Stitching', subtitle: 'Final Stitching', icon: 'construct-outline', color: COLORS.success },
 ];
 
 const WorkProductionScreen = ({ navigation }) => {

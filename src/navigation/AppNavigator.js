@@ -247,7 +247,7 @@ const MoreMenuScreen = ({ navigation }) => {
                         <View style={[styles.appLogoWrap, { backgroundColor: C.primaryMuted }]}>
                             <Ionicons name="diamond-outline" size={28} color={C.primary} />
                         </View>
-                        <Text style={[styles.appName, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                        <Text style={[styles.appName, { color: C.textPrimary }]}>Mellinam Designer Studio</Text>
                         <Text style={[styles.appVersion, { color: C.textMuted }]}>Version 1.0.0</Text>
                         <Text style={[styles.appTagline, { color: C.textMuted }]}>Crafted with care for tailoring excellence</Text>
                     </View>

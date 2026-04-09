@@ -94,13 +94,13 @@ export const MOCK_ORDERS = [
         totalAmount: 45000,
         advanceAmount: 20000,
         balanceAmount: 25000,
-        status: 'In Production',
+        status: 'Production2',
         priority: 'high',
         notes: 'Customer wants gold zardozi work on border',
         createdAt: toEpoch('2026-02-10'),
         tailorId: 't1',
         tailorName: 'Ramu Master',
-        productionStage: 'stitching',
+        productionStage: 'production2',
         isDraft: false,
     },
     {
@@ -192,19 +192,28 @@ export const MOCK_ORDERS = [
 // ===== PRODUCTION STAGES =====
 export const PRODUCTION_STAGES = {
     ORD001: {
+        marking: { status: 'completed', notes: 'Design marked' },
         production1: { status: 'completed', notes: 'Base stitching done' },
         production2: { status: 'in_progress', notes: 'Zardozi work ongoing' },
         production3: { status: 'pending', notes: '' },
+        cutting: { status: 'pending', notes: '' },
+        stitching: { status: 'pending', notes: '' },
     },
     ORD002: {
+        marking: { status: 'completed', notes: 'Done' },
         production1: { status: 'completed', notes: 'Stitching complete' },
         production2: { status: 'completed', notes: 'Maggam work done' },
         production3: { status: 'completed', notes: 'Lining and hooks added' },
+        cutting: { status: 'completed', notes: 'Done' },
+        stitching: { status: 'completed', notes: 'Done' },
     },
     ORD003: {
+        marking: { status: 'in_progress', notes: '' },
         production1: { status: 'pending', notes: '' },
         production2: { status: 'pending', notes: '' },
         production3: { status: 'pending', notes: '' },
+        cutting: { status: 'pending', notes: '' },
+        stitching: { status: 'pending', notes: '' },
     },
 };
 

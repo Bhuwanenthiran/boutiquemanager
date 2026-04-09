@@ -70,10 +70,10 @@ async function mockAuthService(email, password) {
 
     const trimmedEmail = email.trim().toLowerCase();
 
-    if (trimmedEmail === 'admin@atelier.com' && password === 'admin123') {
+    if (trimmedEmail === 'admin@mellinam.com' && password === 'admin123') {
         return { user: { id: '1', name: 'Admin User', email: trimmedEmail }, role: 'admin' };
     }
-    if (trimmedEmail === 'staff@atelier.com' && password === 'staff123') {
+    if (trimmedEmail === 'staff@mellinam.com' && password === 'staff123') {
         return { user: { id: '2', name: 'Staff User', email: trimmedEmail }, role: 'staff' };
     }
 

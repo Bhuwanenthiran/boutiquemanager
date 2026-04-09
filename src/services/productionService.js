@@ -4,7 +4,7 @@ import { now, normalizeDates } from './dateUtils';
 /**
  * Statuses that qualify an order for the production pipeline.
  */
-const PRODUCTION_STATUSES = ['Marking', 'Cutting', 'In Production', 'Pending'];
+const PRODUCTION_STATUSES = ['Pending', 'Marking', 'Production1', 'Production2', 'Production3', 'Cutting', 'Stitching'];
 
 
 /**

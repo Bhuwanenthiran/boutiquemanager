@@ -105,7 +105,7 @@ const HomeScreen = ({ navigation }) => {
                     <View style={styles.header}>
                         <View>
                             <Text style={[styles.greeting, { color: C.textMuted }]}>Welcome back</Text>
-                            <Text style={[styles.title, { color: C.textPrimary }]}>Atelier Boutique</Text>
+                            <Text style={[styles.title, { color: C.textPrimary }]}>Mellinam Designer Studio</Text>
                         </View>
                         <TouchableOpacity
                             style={[styles.notifBtn, { backgroundColor: C.bgCard }]}

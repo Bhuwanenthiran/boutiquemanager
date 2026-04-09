@@ -1,4 +1,4 @@
-// Atelier Boutique — Premium Design System
+// Mellinam Designer Studio — Premium Design System
 import { Platform } from 'react-native';
 
 // Inspired by luxury tailoring studios: warm ivories, muted rose, gold accents
